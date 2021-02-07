@@ -1,0 +1,395 @@
+.darkMode {
+    --background: #4d4d4d;
+    --text:  #d9d9d9;
+    --text-hover: #ffffff;
+    --icon: invert(100%) brightness(0.75);
+    --baricon: invert(0%) brightness(1);
+    --iconHover: invert(100%) brightness(1);
+    --barIconHover: invert(50%) brightness(1);
+}
+
+.lightMode {
+    --background: #ffffff;
+    --text: #000000;
+    --text-hover: #007bff;
+    --icon: invert(0%) brightness(1);
+    --baricon: invert(0%) brightness(1);
+    --iconHover: invert(50%) brightness(1);
+    --barIconHover: invert(50%) brightness(1);
+}
+
+/* Specific Themed Elements */
+
+#paneHolder3, div, button, ::-webkit-file-upload-button, button, th, input {
+    background-color: var(--background);
+}
+
+.page-link {
+    background-color: var(--background) !important;
+    color: var(--text) !important;
+}
+
+#booksTable_paginate > ul > li.paginate_button.page-item.active > a {
+    border-color: #85a3e0 !important;
+}
+
+div, ::-webkit-file-upload-button, button, tr, ::placeholder, .page-link {
+    color: var(--text);
+}
+
+li, input {
+    background-color: var(--background) !important;
+    color: var(--text);
+}
+
+li:hover, li:hover input, a:hover {
+    color: var(--text-hover);
+}
+
+ul {
+    background-color: var(--background);
+}
+
+a {
+    color: var(--text);
+}
+
+.icon {
+    filter: var(--icon);
+}
+
+.barIcon {
+    filter: var(--barIcon);
+}
+
+.icon:hover {
+    filter: var(--iconHover);
+}
+
+.barIcon:hover {
+    filter: var(--iconHover);
+}
+
+/* ************************ */
+
+
+html {
+    height: calc(100vh - 7px);
+    background-color: var(--background);
+}
+
+body {
+    position: relative;
+}
+
+.inline {
+    display: inline-block;
+}
+
+#contents {
+    overflow-y: hidden;
+    width: calc(65% - 20px);
+    background-color: var(--background);
+    color: var(--text);
+}
+
+#chapters {
+    width: 20%;
+    overflow-y: scroll;
+    height: calc(100vh - 50px);
+    touch-action: none;
+    background-color: var(--background);
+    color: var(--text);
+}
+
+#bookmarks {
+    width: 15%;
+    overflow-y: auto;
+    height: calc(100vh - 50px);
+    touch-action: none;
+    background-color: var(--background);
+    color: var(--text);
+}
+
+.chaptersButton {
+    position: relative;
+    top: 5px;
+    right: 42px !important;
+    display: none;
+}
+
+.bookmarksButton {
+    position: relative;
+    top: 5px;
+    right: 77px !important;
+    display: none;
+}
+
+.chapterHeadersContainer, .bookmarksHeadersContainer  {
+    width: 100%;
+}
+
+.chaptersHeader, .bookmarksHeader {
+    width: 100%;
+    text-align: left;
+}
+
+.addBookmarkContainer {
+    text-align: center;
+    width: 100%;
+}
+
+#addBookmark {
+    position: relative;
+    left: 16px;
+    top: 16px;
+    cursor: pointer;
+}
+
+#bookmarksList {
+    position: relative;
+    top: 21px;
+    width: 100%;
+}
+
+.bookmarksListItem {
+    padding: 2px;
+    cursor: pointer;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.bookmarksNotation, .chaptersNotation {
+    margin-left: 5px;
+    cursor: pointer
+}
+
+.closeIcon {
+    margin-right: 5px;
+}
+
+.chaptersHeaderClose, .bookmarksHeaderClose {
+    float:right;
+    clear:right;
+    position: relative;
+    bottom: 32px;
+    right: 5px;
+    cursor: pointer;
+}
+
+.chaptersHeaderClose img, .bookmarksHeaderClose img {
+    width: 25px;
+    height: 25px;
+}
+
+.chaptersHeaderContainer, .bookmarksHeadersContainer {
+    display: none;
+}
+
+.paneHolder {
+    position: relative;
+    top: 42px;
+    height: calc(100vh - 100px);
+}
+
+#paneHolder1 {
+    margin-left: 20px;   
+}
+
+#paneHolder4 {
+    padding: 40px;
+}
+
+.paneHolderLibrary {
+    overflow: visible;
+}
+
+.readBookIcon, .removeBookIcon, .missingBookIcon {
+    cursor: pointer;
+}
+
+.readBookIcon {
+    margin-right: 4px;
+}
+
+.missingBookIcon {
+    margin-left: 4px;
+}
+
+#settingsLibraryIcon {
+    width: 16px;
+    height: auto;
+}
+
+#libraryRefreshIcon {
+    padding-right: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    cursor: pointer;
+}
+
+.refreshContainer {
+    width: 50%;
+    text-align: right;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    z-index: 1;
+    display: none;
+}
+
+#nextButton {
+    right: 0px;
+}
+#previousButton {
+    left: 0px;
+}
+
+.nav {
+    position: fixed;
+    top: 0px;
+    z-index: 99;
+    width: 100%;
+    background-color: lightgray;
+}
+
+.nav-item {
+    cursor: pointer;
+}
+
+.chaptersNav {
+    position: absolute;
+    right: 47px;
+    z-index: 100
+}
+
+.bookmarksNav {
+    position: absolute;
+    right: 10px;
+    z-index: 100
+}
+
+.nightModeNav {
+    position: absolute;
+    right: 10px;
+    z-index: 100;
+    top: 5px;
+}
+
+thead input {
+    width: 150px;
+}
+
+.navigationButton {
+    width: 50px;
+    height: 100%;
+    display: flex;
+    align-items: center; /* Vertical center alignment */
+    position: absolute;
+    top: 0px;
+    font-size: 64px;
+    color: white;
+    background-color:rgba(150, 150, 150, .5);
+    opacity: 0;
+    font-weight: bold;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    z-index: 100;
+}
+
+.progress {
+    width: 75%;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    z-index: 100;
+}
+
+.progressContainer {
+    display: none;    
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background-color: rgba(0,0,0,.2);
+}
+
+.progressCancel {
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 28px);
+    z-index: 1000;
+}
+
+/* Alerts */
+
+.timedWarning {
+    display: none;
+}
+
+.bookmarksListItem input {
+    width: calc(100% - 42px);
+    border: 0px;
+    pointer-events: none;
+}
+
+.bookmarkButton {
+    width: 16px;
+    height: 16px;
+    position: relative;
+    float: right;
+}
+
+#bookmarkDelete {
+    right: 0px;
+}
+
+#bookmarkEdit {
+    right: 5px;
+}
+
+.dataTableSmallText:not(.sorting) {
+    font-size: 10px;
+}
+
+.dataTableCenter {
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+.dataTableCenterVertical {
+    vertical-align: middle;
+}
+
+.resolveBookHide, .readBookHide  {
+    display: none;
+}
+
+.resolveBookShow, .readBookShow {
+    display: inline-block;
+}
+
+.loading {
+    display: flex;
+    margin: 0 auto;
+}
+
+.loadingContainer {
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(150, 150, 150, .5);
+    position: fixed;
+    display: none;
+    align-items: center;
+    top: 0; 
+    z-index: 1031;
+}
+
+/*For browser/screen widths less than 768px*/
+@media screen and (max-width: 1040px) {
+
+}

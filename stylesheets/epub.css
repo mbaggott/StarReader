@@ -1,0 +1,21 @@
+svg { 
+    object-fit: cover;
+    max-height: 100% !important;
+    max-width: 62.5% !important;
+
+}
+
+img { 
+    object-fit: cover;
+    max-height: 100% !important;
+    max-width: 62.5% !important;
+
+}
+
+image { 
+    object-fit: cover;
+    max-height: 100% !important;
+    max-width: 62.5% !important;
+
+}
+

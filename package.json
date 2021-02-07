@@ -1,0 +1,21 @@
+{
+  "name": "eserver",
+  "version": "1.0.0",
+  "description": "eBook Server",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Michael Baggott",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/datatables.net": "^1.10.19",
+    "electron": "^9.0.5",
+    "epub": "^1.2.1",
+    "jquery": "^3.5.1",
+    "pdfmake": "^0.1.66",
+    "popper.js": "^1.16.1",
+    "sqlite3": "^5.0.0"
+  },
+  "dependencies": {}
+}
