@@ -81,7 +81,7 @@ $(document).ready(function() {
   initDatabase(sqlite3).then((db) => {
     database = db;
     window.db = db;
-    configureDatabseTables(db);
+    configureDatabaseTables(db);
     updateLibraryLocation(false).then((path) => {
       updateLibrary(true, path);
     });
@@ -1072,7 +1072,7 @@ function updateBooksPaths(path, rowId) {
   });
 }
 
-function configureDatabseTables(db) {
+function configureDatabaseTables(db) {
   
   db.run('CREATE TABLE IF NOT EXISTS Books (id INTEGER PRIMARY KEY AUTOINCREMENT, Title TEXT NOT NULL, Author TEXT NOT NULL, Path TEXT NOT NULL, Filename TEXT NOT NULL);', [], function(err) {
     if (err) {

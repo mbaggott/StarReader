@@ -83,16 +83,24 @@
 
         <div class="tab-pane" id="settings" role="tabpanel" aria-labelledby="settings-tab">
           <div id = "paneHolder4" class = "paneHolder  lightMode">
-            <div class="">
+            <div>
               <div class="row">
-                <div class="col-2">
+                <div class="col-5">
                   Library Location:
                 </div>
-                <div id= "libraryLocation" class="col-9">
+                <div id= "libraryLocation" class="col-6">
                   
                 </div>
                 <div class="col-1">
                   <img id = "settingsLibraryIcon" class = "nightModeBMButton icon" onclick = "updateLibraryLocation(true)" src = "./img/icons/iconEdit32.png" />
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-5">
+                  Exit to System Tray:
+                </div>
+                <div class="col-7">
+                  <input type="checkbox" id="exitToSystemTray" name="exitToSystemTray">
                 </div>
               </div>
             </div>
