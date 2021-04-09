@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <title>eServer ePub Reader & Library</title>
     <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.datatables.net; ">
-    <script>window.$ = window.jQuery = require('jquery');</script>
-    <script>const { ipcRenderer } = require('electron')</script>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'">
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script type="text/javascript"src="./src/jquery-3.6.0-dist/jquery.min.js"></script>    
     <script type="text/javascript" src="./src/init.js"></script>
     <script type="text/javascript" src="./src/bootstrap-4.5.0-dist/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="./src/DataTables-1.10.21/js/jquery.dataTables.min.js"></script>
@@ -20,6 +20,9 @@
     <script src="./src/ePub/epub.min.js"></script>
     <script src="./src/interactjs-1.9.20-dist/js/interact.min.js"></script>
     <script src="./src/jquery-ui-1.12.1-dist/js/jquery-ui.min.js"></script>
+    <script type="text/javascript"src="./src/popper-2.9.1-dist/popper.min.js"></script> 
+    <script type="text/javascript"src="./src/pdfmake-0.2.0-alpha/pdfmake.min.js"></script>    
+    <script type="text/javascript"src="./src/vfsfonts-dist/vfsfonts.min.js"></script>    
     <link rel="stylesheet" href="./stylesheets/style.css"> 
 
   </head>
@@ -148,6 +151,24 @@
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
             <button type="button" class="btn btn-danger">Remove</button>
             <button type="button" class="btn btn-primary">Update</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="serverErrorModal" class="modal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Server Error</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>There was a fatal error communicating with the server. <div id = "serverErrorMessage"></div><br/>Please exit the application.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">Ok</button>
           </div>
         </div>
       </div>
