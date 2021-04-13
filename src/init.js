@@ -69,6 +69,7 @@ $(function() {
     $(window).on("resize", resize);
 
     updateLibraryLocation(false).then((path) => {
+        window.libraryPath = path;
         updateLibrary(true, path);
     });  
 
@@ -112,6 +113,7 @@ function resolveMissingBook(db, bookId) {
     let path = files[0].path;
     let filename = files[0].name;
     window.api.onResolveMissingBooks((response) => {
+        window.api.resolveMissingBooksRemoveResponseHandler('RMBKEY');
         if (response.error == false) {
             updateLibrary(false);
         } else {
@@ -124,7 +126,6 @@ function resolveMissingBook(db, bookId) {
 }
 
 function addBooks() {
-    console.log('addBooks')
     let libraryPathQuery = new Promise((resolve, reject) => {
         window.api.onGetLibraryLocation((response) => {
             window.api.getLibraryLocationRemoveResponseHandler('GLLKEY');
@@ -134,23 +135,21 @@ function addBooks() {
     });
 
     libraryPathQuery.then((response1) => {
-        console.log('pathQuery')
         if (response1.error == false) {
             let libraryPath = response1.data[0].LibraryLocation
             let libraryPathQuery  = new Promise((resolve, reject) => {
                 window.api.onAddBooksToLibrary((response2) => {
+                    window.api.addBooksToLibraryRemoveResponseHandler('ABTLKEY');
                     resolve(response2);
                 });
                 window.api.addBooksToLibrary(); //printed first
             });
             libraryPathQuery.then((response2) => {
-                console.log('addBookstoLibray')
                 if (response2.error == false) {
                     let fileList = response2.data;
                     if (fileList.length == 0) {
                         return;
                     }
-                    console.log('made it 1')
                     for (let flx = 0; flx < fileList.length; flx++) {
                         if (!fileList[flx].includes(libraryPath)) {
                             $('#addBooksMustBeInLibraryFolder').show();
@@ -160,7 +159,6 @@ function addBooks() {
                             return;
                         }
                     }
-                    console.log('made it 2')
                     let numFiles = fileList.length;
                     let count = 0;
                     
@@ -173,7 +171,6 @@ function addBooks() {
                         window.api.getBooksPaths(); //printed first
                     });
                     pathListQuery.then((response3) => {
-                        console.log('runingpathlistquery')
                         if (response3.error == false) {
                             let rows = response3.data;
                             $('.progress-bar').css('width', '0%');
@@ -188,7 +185,6 @@ function addBooks() {
                             $('.progressContainer').show();
                 
                             // Start adding the books one by one to the database
-                            console.log('addBookstodb')
                             addBooktoDB([], numFiles, count, fileList, rows, 0);
                         } 
                         else {
@@ -212,17 +208,12 @@ function addBooks() {
 }      
 
 function addBooktoDB(bookArray, numFiles, count, fileList, pathList, booksAdded) {
-    console.log(fileList)
-    console.log(count)
-    console.log(numFiles)
     $('.alert').hide();
     $('.progress-bar').css('width', (count / numFiles * 100) + '%');
     if (count > 0) {
         $('.progress-bar').css('width', (count / numFiles * 100) + '%');
     }
     if (numFiles == count) {
-        console.log(numFiles)
-        console.log(count)
         if (booksAdded == 0) {
             $('#allBooksAddedDuplicates').show();
             setTimeout(function(){
@@ -236,7 +227,6 @@ function addBooktoDB(bookArray, numFiles, count, fileList, pathList, booksAdded)
             },5000);
         }
         if (booksAdded > 0) {
-            console.log('sending')
             sendBooksToDatabase(bookArray);
         }
         window.addBooksCancel = false;
@@ -245,40 +235,33 @@ function addBooktoDB(bookArray, numFiles, count, fileList, pathList, booksAdded)
     }
   
     let epubFile = fileList[count];
-    console.log(epubFile)
     // Check if file path already exists in the Database. If it does, skip this book.
     if (pathList.length === 0) {
         if (numFiles > count && window.addBooksCancel == false) {
-            console.log('running execute 1')
             addBookToDBExecute(bookArray, numFiles, count, fileList, pathList, epubFile, ++booksAdded)
         } 
         else {
             // If finished, update the library Grid, and reset cancel back to false so it can be used again.
-            console.log('running DB1')
             sendBooksToDatabase(bookArray);
         }
     } else if (pathList.includes(epubFile)) {
-        console.log('running if')
         if (numFiles > count && window.addBooksCancel == false) {
-            console.log('running Db2')
             addBooktoDB(bookArray, numFiles, ++count, fileList, pathList, booksAdded);
         } 
         else {
             // If finished, update the library Grid, and reset cancel back to false so it can be used again.
-            console.log('running DB3')
             sendBooksToDatabase(bookArray);
         }
         return;
     }
     else {
-        console.log('running execute');
         addBookToDBExecute(bookArray, numFiles, count, fileList, pathList, epubFile, ++booksAdded)
     }
 } 
 
 function sendBooksToDatabase(bookArray) {
     window.api.onAddBooksToDatabase((response) => {
-        console.log(response);
+        window.api.addBooksToDatabaseRemoveResponseHandler('ABTDKEY');
         if (response.error == false) {
             updateLibrary(false);
             window.addBooksCancel = false;
@@ -295,7 +278,6 @@ function sendBooksToDatabase(bookArray) {
 }
 
 function addBookToDBExecute(bookArray, numFiles, count, fileList, pathList, epubFile, booksAdded) {
-    console.log(epubFile)
     var filename = epubFile.split('\\').pop().split('/').pop();
     // Insert the book into the database, and recursively call the function again, so all books are inserted one by one into the Database.
     let epub = window.ePub(epubFile);
@@ -489,6 +471,9 @@ async function updateLibraryLocation(manualEdit) {
 }
 
 function updateLibrary(firstRun, path) {
+    if (window.libraryPath) {
+        path = window.libraryPath;
+    }
     if (path) {
         window.api.onGetBookFileList((response) => {
             window.api.getBookFileListRemoveResponseHandler('GBFLKEY');
@@ -580,9 +565,9 @@ function updateLibrary(firstRun, path) {
                 window.api.getBooks(path);   
             }
         });
-        window.api.getBookFileList(path);    
+        window.api.getBookFileList(path);   
+        window.jsonData = []; 
     }
-    window.jsonData = [];
 }
 
 function initBooksTable() {
@@ -614,6 +599,7 @@ function initBooksTable() {
 function readBook(path, bookId) {
     window.openBookId = bookId;
     window.api.onReadEpubFromFile((response) => {
+        window.api.readEpubFromFileRemoveResponseHandler('REFFKEY');
         if (response.error == false) {
             displayBook(response.data)
         } else {
@@ -627,8 +613,8 @@ function readBook(path, bookId) {
 }
 
 function removeBook(bookId) {
-    window.api.removeBookRemoveResponseHandler('RBKEY');
     window.api.onRemoveBook((response) => {
+        window.api.removeBookRemoveResponseHandler('RBKEY');
         if (response.error == false) {
             updateLibrary(false);
         } else {
@@ -1065,6 +1051,7 @@ function nightModeButtonPressed() {
 
 function populateBookmarks() {
     window.api.onGetBookmarks((response) => {
+        window.api.getBookmarksRemoveResponseHandler('GBKEY');
         if (response.error == false) {
             $('#bookmarksList').empty();
             let rows = response.data;
@@ -1094,6 +1081,7 @@ function populateBookmarks() {
 
 function addBookmark() {
     window.api.onAddBookmark((response) => {
+        window.api.addBookmarkRemoveResponseHandler('ABKEY');
         if (response.error == false) {
             populateBookmarks();
         } else {
@@ -1107,6 +1095,7 @@ function addBookmark() {
 
 function deleteBookmark(id) {
     window.api.onDeleteBookmark((response) => {
+        window.api.deleteBookmarkRemoveResponseHandler('DBKEY');
         if (response.error == false) {
             populateBookmarks();
         } else {
@@ -1129,6 +1118,7 @@ function editBookmark(id) {
     input.on('blur keyup', function(e) {
         if((e.type == 'keyup') && (e.keyCode == 10 || e.keyCode == 13)) {
             window.api.onUpdateBookmarkTitle((response) => {
+                window.api.updateBookmarkTitleRemoveResponseHandler('UBTKEY');
                 if (response.error == false) {
                     input.attr("readonly", true);
                     input.css("pointer-events", 'none');
@@ -1147,6 +1137,7 @@ function editBookmark(id) {
             input.trigger('blur');
         } else if (e.type == 'blur') {
             window.api.onUpdateBookmarkTitle((response) => {
+                window.api.updateBookmarkTitleRemoveResponseHandler('UBTKEY');
                 if (response.error == false) {
                     input.attr("readonly", true);
                     input.css("pointer-events", 'none');
@@ -1204,6 +1195,7 @@ function getRows() {
 function updateBooksPaths(path, rowId) {
   return new Promise((resolve, reject) => {
     window.api.onUpdateBooksPaths((response) => {
+        window.api.updateBooksPathsRemoveResponseHandler('UBPKEY');
         if (response.error == false) {
             resolve();   
         } else {
@@ -1217,6 +1209,7 @@ function updateBooksPaths(path, rowId) {
 
 function recordReadPosition() {
     window.api.onRecordReadPosition((response) => {
+        window.api.recordReadPositionRemoveResponseHandler('RRPKEY');
         if (response.error == true) {   
             $('#serverErrorMessage').html(response.message);
             $('#serverErrorModal').modal('show');
@@ -1228,6 +1221,7 @@ function recordReadPosition() {
 
 function goToLastRead() {
     window.api.onGoToLastRead((response) => {
+        window.api.goToLastReadRemoveResponseHandler('GTLRKEY');
         if (response.error == true) {   
             $('#serverErrorMessage').html(response.message);
             $('#serverErrorModal').modal('show');

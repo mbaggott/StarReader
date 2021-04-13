@@ -124,8 +124,8 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
         })   
     })
 
-    ipcMain.on('removeBook', (event, arg) => {
-        database.getBooks(db, arg).then((response) => {
+    ipcMain.on('removeBook', (event, bookId) => {
+        database.removeBook(db, bookId).then((response) => {
             win.webContents.send("removeBookResponse", response)
         })   
     })

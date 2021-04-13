@@ -149,7 +149,6 @@ module.exports = {
                 rows.forEach((row, index) => {
                     pathList.push(row.Path);
                 })
-                console.log(pathList)
                 resolve({
                     error: false,
                     data: pathList
@@ -276,7 +275,6 @@ module.exports = {
                         message: 'Unable to update UserTitle in Bookmarks table: ' + err
                     })
                 }
-                console.log('resolvio')
                 resolve({
                     error: false,
                     data: rows
