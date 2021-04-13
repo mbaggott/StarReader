@@ -20,60 +20,133 @@ contextBridge.exposeInMainWorld(
         }),
         onSelectLibraryLocation: (fn) => {
             // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on('selectLibraryLocationResponse', (event, ...args) => fn(...args));
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('selectLibraryLocationResponse', saferFn)
+            const key = 'SLLKEY'
+            listeners[key] = saferFn
+        },
+        selectLibraryLocationRemoveResponseHandler: (key) => {
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('selectLibraryLocationResponse', fn);
         },
         selectLibraryLocation: () => ipcRenderer.send("selectLibraryLocation"),
         onGetBooks: (fn) => {
             // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on('getBooksResponse', (event, ...args) => fn(...args));
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('getBooksResponse', saferFn)
+            const key = 'GBKEY'
+            listeners[key] = saferFn
+        },
+        getBooksRemoveResponseHandler: (key) => {
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('getBooksResponse', fn);
         },
         getBooks: () => ipcRenderer.send("getBooks"),
         onRemoveBook: (fn) => {
             // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on('removeBookResponse', (event, ...args) => fn(...args));
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('removeBookResponse', saferFn)
+            const key = 'RBKEY'
+            listeners[key] = saferFn
+        },
+        removeBookRemoveResponseHandler: (key) => {
+            const fn = listeners[key];
+            delete listeners[key];
+            ipcRenderer.removeListener('removeBookResponse', fn);
         },
         removeBook: (bookId) => ipcRenderer.send("removeBookResponse", bookId),
         onGetBookFileList: (fn) => {
             // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on('getBookFileListResponse', (event, ...args) => fn(...args));
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('getBookFileListResponse', saferFn)
+            const key = 'GBFLKEY'
+            listeners[key] = saferFn
+        },
+        getBookFileListResponseHandler: (key) => {
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('getBookFileListResponse', fn);
         },
         getBookFileList: (escapedPath) => ipcRenderer.send("getBookFileList", escapedPath),
         onGetBookFileListModal: (fn) => {
             // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on('getBookFileListModalResponse', (event, ...args) => fn(...args));
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('getBookFileListModalResponse', saferFn)
+            const key = 'GBFLMKEY'
+            listeners[key] = saferFn
+        },
+        getBookFileListModalResponseHandler: (key) => {
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('getBookFileListModalResponse', fn);
         },
         getBookFileListModal: (escapedPath) => ipcRenderer.send("getBookFileListModal", escapedPath),
         onGetLibraryLocation: (fn) => {
             // Deliberately strip event as it includes `sender` 
             const saferFn = (event, ...args) => fn(...args)
-            ipcRenderer.on('getLibraryLocationResponse', saferFn);
-            const key = 'GLLKEY';
-            listeners[key] = saferFn;
+            ipcRenderer.on('getLibraryLocationResponse', saferFn)
+            const key = 'GLLKEY'
+            listeners[key] = saferFn
         },
         getLibraryLocationRemoveResponseHandler: (key) => {
-            const fn = listeners[key];
-            delete listeners[key];
-            ipcRenderer.removeListener('getLibraryLocationResponse', fn);
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('getLibraryLocationResponse', fn)
         },
         getLibraryLocation: () => ipcRenderer.send("getLibraryLocation"),
         onLibraryLocationExists: (fn) => {
-            // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on('libraryLocationExistsResponse', (event, ...args) => fn(...args));
+            // Deliberately strip event as it includes `sender`
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('libraryLocationExistsResponse', saferFn)
+            const key = 'LLEKEY'
+            listeners[key] = saferFn 
+        },
+        libraryLocationExistsRemoveResponseHandler: (key) => {
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('libraryLocationExistsResponse', fn)
         },
         libraryLocationExists: (escapedPath) => ipcRenderer.send("libraryLocationExists", escapedPath),
         onInsertLibraryLocation: (fn) => {
             // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on('insertLibraryLocationResponse', (event, ...args) => fn(...args));
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('insertLibraryLocationResponse', saferFn)
+            const key = 'ILLKEY'
+            listeners[key] = saferFn 
+        },
+        insertLibraryLocationRemoveResponseHandler: (key) => {
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('insertLibraryLocationResponse', fn)
         },
         insertLibraryLocation: (folder) => ipcRenderer.send("insertLibraryLocation", folder),
         onUpdateLibraryLocation: (fn) => {
-            // Deliberately strip event as it includes `sender` 
-            ipcRenderer.on('updateLibraryLocationResponse', (event, ...args) => fn(...args));
+            // Deliberately strip event as it includes `sender`
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('updateLibraryLocationResponse', saferFn)
+            const key = 'ULLKEY'
+            listeners[key] = saferFn 
+        },
+        updateLibraryLocationRemoveResponseHandler: (key) => {
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('updateLibraryLocationResponse', fn)
         },
         updateLibraryLocation: (folder, settingsId) => ipcRenderer.send("updateLibraryLocation", folder, settingsId),
         onGetBooksPaths: (fn) => {
-            // Deliberately strip event as it includes `sender` 
+            // Deliberately strip event as it includes `sender`
+            const saferFn = (event, ...args) => fn(...args)
+            ipcRenderer.on('getBooksPathsResponse', saferFn)
+            const key = 'GBPKEY'
+            listeners[key] = saferFn 
             ipcRenderer.on('getBooksPathsResponse', (event, ...args) => fn(...args));
+        },
+        getBooksPathsRemoveResponseHandler: (key) => {
+            const fn = listeners[key]
+            delete listeners[key]
+            ipcRenderer.removeListener('getBooksPathsResponse', fn)
         },
         getBooksPaths: () => ipcRenderer.send("getBooksPaths"),
         onUpdateBooksPaths: (fn) => {

@@ -167,6 +167,7 @@ function addBooks() {
                     // Create a query to check for existing book paths
                     let pathListQuery = new Promise((resolve, reject) => {
                         window.api.onGetBooksPaths((response3) => {
+                            window.api.getBooksPathsRemoveResponseHandler('GBPKEY');
                             resolve(response3);
                         });
                         window.api.getBooksPaths(); //printed first
@@ -342,6 +343,7 @@ async function updateLibraryLocation(manualEdit) {
         $('#libraryLocationModal').on('show.bs.modal', function (event) {
             $('#libraryLocationModal .btn-primary').on('click', () =>   {
                 window.api.onSelectLibraryLocation((response) => {
+                    window.api.selectLibraryLocationRemoveResponseHandler('SLLKEY');
                     if (response.error == false) {
                         folder =  response.data; 
                         if (folder.length == 0) {
@@ -354,6 +356,7 @@ async function updateLibraryLocation(manualEdit) {
                         var escapedPath = folder.toString().replace(/\\/g, "/");
                         //update the list of books in the library from the slelected folder
                         window.api.onGetBookFileListModal((response) => {
+                            window.api.getBookFileListModalRemoveResponseHandler('GBFLMKEY');
                             if (response.error) {
                                 window.libraryFiles = response.data;
                             }
@@ -364,6 +367,7 @@ async function updateLibraryLocation(manualEdit) {
                         // Resolve with the escaped path of the new library location
                         if (dataResult == 'nosetting') {
                             window.api.onInsertLibraryLocation((response) => {
+                                window.api.insertLibraryLocationRemoveResponseHandler('ILLKEY');
                                 if (response.error == false) {
                                     $('.loadingContainer').css('display', 'none');
                                     $('#libraryLocation').html(escapedPath);
@@ -380,6 +384,7 @@ async function updateLibraryLocation(manualEdit) {
                         else {
                             let settingsId = $('#libraryLocationModal').attr('data-settingsid');
                             window.api.onUpdateLibraryLocation((response) => {
+                                window.api.updateLibraryLocationRemoveResponseHandler('ULLKEY');
                                 if (response.error == false) {
                                     $('#libraryLocation').html(folder);
                                     rewriteBooksPaths(currentPath, newPath);
@@ -406,6 +411,7 @@ async function updateLibraryLocation(manualEdit) {
         });
 
         window.api.onGetLibraryLocation((response) => {
+            window.api.getLibraryLocationRemoveResponseHandler('GLLKEY');
             if (response.error == false) {
                 let rows = response.data;
                 // If performing a manual edit through the settings page
@@ -413,6 +419,7 @@ async function updateLibraryLocation(manualEdit) {
                     let currentPath = rows[0].LibraryLocation + '\\';
 
                     window.api.onSelectLibraryLocation((response) => {
+                        window.api.selectLibraryLocationRemoveResponseHandler('SLLKEY');
                         if (response.error == false) {
                             folder =  response.data; 
                             if (folder.length == 0){
@@ -421,6 +428,7 @@ async function updateLibraryLocation(manualEdit) {
                             }
                             let newPath = folder + '\\';
                             window.api.onUpdateLibraryLocation((response) => {
+                                window.api.updateLibraryLocationRemoveResponseHandler('ULLKEY');
                                 if (response.error == false) {
                                     $('#libraryLocation').html(folder);
                                     var escapedPath = folder.toString().replace(/\\/g, "/");
@@ -450,6 +458,7 @@ async function updateLibraryLocation(manualEdit) {
                     // Get library Location stored in the DB, and see if it exists on the HDD. Send that result to the modal.
                     var escapedPath = rows[0].LibraryLocation.replace(/\\/g, "/");
                     window.api.onLibraryLocationExists((response) => {
+                        window.api.libraryLocationExistsRemoveResponseHandler('LLEKEY');
                         if (response.error == false) {
                            result = response.data;
                            if (result == true) {
@@ -482,9 +491,11 @@ async function updateLibraryLocation(manualEdit) {
 function updateLibrary(firstRun, path) {
     if (path) {
         window.api.onGetBookFileList((response) => {
+            window.api.getBookFileListRemoveResponseHandler('GBFLKEY');
             if (response.error == false) {
                 window.libraryFiles = response.data;
                 window.api.onGetBooks((response) => {
+                    window.api.getBooksRemoveResponseHandler('GBKEY');
                     if (response.error == false) {
                         rows=response.data;
                         // Populate the books Grid
@@ -616,6 +627,7 @@ function readBook(path, bookId) {
 }
 
 function removeBook(bookId) {
+    window.api.removeBookRemoveResponseHandler('RBKEY');
     window.api.onRemoveBook((response) => {
         if (response.error == false) {
             updateLibrary(false);
@@ -1178,6 +1190,7 @@ async function rewriteBooksPaths(currentPath, newPath) {
 function getRows() {
     return new Promise(function (resolve, reject) {
         window.api.onGetBooks((response) => {
+            window.api.getBooksRemoveResponseHandler('GBKEY');
             if (response.error == false) {
                 resolve(response.data);   
             } else {
