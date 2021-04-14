@@ -31,11 +31,10 @@ contextBridge.exposeInMainWorld(
             ipcRenderer.removeListener('selectLibraryLocationResponse', fn);
         },
         selectLibraryLocation: () => ipcRenderer.send("selectLibraryLocation"),
-        onGetBooks: (fn) => {
+        onGetBooks: (fn, key) => {
             // Deliberately strip event as it includes `sender` 
             const saferFn = (event, ...args) => fn(...args)
             ipcRenderer.on('getBooksResponse', saferFn)
-            const key = 'GBKEY'
             listeners[key] = saferFn
         },
         getBooksRemoveResponseHandler: (key) => {
@@ -160,7 +159,7 @@ contextBridge.exposeInMainWorld(
             delete listeners[key]
             ipcRenderer.removeListener('updateBooksPathsResponse', fn)
         },
-        upateBooksPaths: (path, rowId) => ipcRenderer.send("updateBooksPaths", path, rowId),
+        updateBooksPaths: (path, rowId) => ipcRenderer.send("updateBooksPaths", path, rowId),
         onResolveMissingBooks: (fn) => {
             // Deliberately strip event as it includes `sender`
             const saferFn = (event, ...args) => fn(...args)

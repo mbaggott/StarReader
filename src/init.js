@@ -95,7 +95,7 @@ $(function() {
         });
 
         $('#resolveMissingBookFileSelect').on('change', () => {
-            resolveMissingBook(db, bookId);
+            resolveMissingBook(bookId);
             $('#resolveMissingBookModal').modal('hide');     
         });
     
@@ -105,10 +105,9 @@ $(function() {
     
     
     })
-
 });
 
-function resolveMissingBook(db, bookId) {
+function resolveMissingBook(bookId) {
     let files = $('#resolveMissingBookFileSelect').prop('files');
     let path = files[0].path;
     let filename = files[0].name;
@@ -421,7 +420,7 @@ async function updateLibraryLocation(manualEdit) {
                                     return;
                                 }
                             });
-                            window.api.updateLibraryLocation(folder, rows(0).id);
+                            window.api.updateLibraryLocation(folder, rows[0].id);
                         } 
                         else {
                             $('#serverErrorMessage').html(response.message);
@@ -480,7 +479,7 @@ function updateLibrary(firstRun, path) {
             if (response.error == false) {
                 window.libraryFiles = response.data;
                 window.api.onGetBooks((response) => {
-                    window.api.getBooksRemoveResponseHandler('GBKEY');
+                    window.api.getBooksRemoveResponseHandler('GBKEY1');
                     if (response.error == false) {
                         rows=response.data;
                         // Populate the books Grid
@@ -561,7 +560,7 @@ function updateLibrary(firstRun, path) {
                         $('#serverErrorModal').modal('show');
                         return;
                     }
-                });
+                }, 'GBKEY1');
                 window.api.getBooks(path);   
             }
         });
@@ -1156,38 +1155,38 @@ function editBookmark(id) {
 async function rewriteBooksPaths(currentPath, newPath) {
     try {
         rows = await getRows();
+        for (const row of rows) {
+            let path = row.Path;
+            path = path.replace(currentPath, newPath);
+            try {
+                await updateBooksPaths(path, row.id);
+            } 
+            catch (err) {
+                $('#serverErrorMessage').html(err);
+                $('#serverErrorModal').modal('show');
+                return;
+            }
+        }
+        $('.loadingContainer').css('display', 'none');
+        updateLibrary(false, newPath);
     }
     catch (err) {
         $('#serverErrorMessage').html(err);
         $('#serverErrorModal').modal('show');
         return;
     }  
-    for (const row of rows) {
-        let path = row.Path;
-        path = path.replace(currentPath, newPath);
-        try {
-            await updateBooksPaths(path, row.id);
-        } 
-        catch (err) {
-            $('#serverErrorMessage').html(err);
-            $('#serverErrorModal').modal('show');
-            return;
-        }
-    }
-    $('.loadingContainer').css('display', 'none');
-    updateLibrary(false, newPath);
 }
 
 function getRows() {
     return new Promise(function (resolve, reject) {
         window.api.onGetBooks((response) => {
-            window.api.getBooksRemoveResponseHandler('GBKEY');
+            window.api.getBooksRemoveResponseHandler('GBKEY2');
             if (response.error == false) {
                 resolve(response.data);   
             } else {
-                reject(response.messaage);
+                resolve(response.messaage);
             }
-        });
+        }, 'GBKEY2');
         window.api.getBooks();
     });
 }
@@ -1202,7 +1201,7 @@ function updateBooksPaths(path, rowId) {
             reject(response.messaage);
         }
     });
-    window.api.updateBooksPaths();
+    window.api.updateBooksPaths(path, rowId);
   
   });
 }
@@ -1231,3 +1230,67 @@ function goToLastRead() {
     });
     window.api.goToLastRead(window.openBookId);
 }
+
+$(function() {
+    (function($) {
+        var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
+    
+        $.fn.attrchange = function(callback) {
+            if (MutationObserver) {
+                var options = {
+                    subtree: false,
+                    attributes: true
+                };
+    
+                var observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(e) {
+                        callback.call(e.target, e.attributeName);
+                    });
+                });
+    
+                return this.each(function() {
+                    observer.observe(this, options);
+                });
+    
+            }
+        }
+    })(jQuery);
+    
+    //Now you need to append event listener
+    $('#library').attrchange(function(attrName) {
+    
+        if(attrName=='class') {
+            if ($('#library-tab').hasClass('active')) {
+                $('#bookmarksButton').hide();
+                $('#chaptersButton').hide();
+            }
+        }
+    });
+    $('#settings-tab').attrchange(function(attrName) {
+    
+        if(attrName=='class') {
+            if ($('#settings-tab').hasClass('active')) {
+                $('#bookmarksButton').hide();
+                $('#chaptersButton').hide();
+            }
+        }
+    });
+    $('#addBooks-tab').attrchange(function(attrName) {
+    
+        if(attrName=='class') {
+            if ($('#addBooks-tab').hasClass('active')) {
+                $('#bookmarksButton').hide();
+                $('#chaptersButton').hide();
+            }
+        }
+    });
+    $('#read-tab').attrchange(function(attrName) {
+    
+        if(attrName=='class') {
+            if ($('#read-tab').hasClass('active')) {
+                $('#bookmarksButton').show();
+                $('#chaptersButton').show();
+            }
+        }
+    });
+});

@@ -118,7 +118,7 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
         }
     })
 
-    ipcMain.on('getBooks', (event, arg) => {
+    ipcMain.on('getBooks', (event) => {
         database.getBooks(db).then((response) => {
             win.webContents.send("getBooksResponse", response)
         })   
@@ -226,7 +226,7 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
     })
 
     ipcMain.on('updateBooksPaths', async (event, path, rowId) => {
-        database.updateBookPathsGetRows(db, path, rowId).then((response) => {
+        database.updateBooksPathsGetRows(db, path, rowId).then((response) => {
             win.webContents.send("updateBooksPathsResponse", response);
         })        
     })
