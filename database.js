@@ -409,7 +409,12 @@ module.exports = {
                         error: false,
                         data: matchedRow.Position
                     })
-                } 
+                } else {
+                    resolve({
+                        error: false,
+                        data: null
+                    })
+                }
             })
         })
     },

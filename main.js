@@ -295,6 +295,7 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
 
     ipcMain.on('goToLastRead', async (event, bookId) => {
         database.goToLastRead(db, bookId).then((response) => {
+            console.log('main responding')
             win.webContents.send("goToLastReadResponse", response);
         })        
     })

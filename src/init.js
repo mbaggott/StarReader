@@ -632,7 +632,10 @@ function displayBook(arrbuf) {
 
     // Destroy any previous book before openeing a new one
     if (window.book) {
-        window.book.destroy();
+        delete window.book;
+        delete window.rendition;
+        $('#nextButton').off('click');
+        $('#previousButton').off('click');
     }
 
     // Convert the array buffer into a blob so it can be read by EPub
@@ -741,7 +744,10 @@ function setTimeoutFunction() {
 
 function loadChapterFromTOC(element) {
     let url = $("a:focus").attr('data-href');
-    window.rendition.display(url);
+    window.rendition.display(url).then(() => {
+        recordReadPosition();
+    });
+    
     setTimeout(() => { setTimeoutFunction() }, 100);
 }
 
@@ -1226,7 +1232,9 @@ function goToLastRead() {
             $('#serverErrorModal').modal('show');
             return;
         }
-        window.rendition.display(response.data);
+        if (response.data) {
+            window.rendition.display(response.data);
+        }
     });
     window.api.goToLastRead(window.openBookId);
 }
