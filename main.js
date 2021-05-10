@@ -1,12 +1,13 @@
 const { readFileSync } = require('fs') // used to read files
-const { dialog, ipcMain, ipcRenderer} = require('electron') // used to communicate asynchronously from the main process to renderer processes.
-const EventEmitter = require('events')
+const { dialog, ipcMain} = require('electron') // used to communicate asynchronously from the main process to renderer processes.
+const networkDialog = require('node-file-dialog')
 const {app, BrowserWindow, Tray, Menu} = require('electron')
 const path = require('path')
+const http = require('http')
 const fs = require('fs')
 const sqlite3 = require('sqlite3')
 var database = require('./database');
-EventEmitter.defaultMaxListeners = 0;
+const port = process.argv[2] || 9000;
 
 let isQuitting
 let tray;
@@ -19,7 +20,81 @@ app.whenReady().then(() =>  {
   
   db = database.initDb(sqlite3).then((db) => {
     database.configureDatabaseTables(db)
-    startApp(db)
+    const server = http.createServer(function (req, res) {
+        console.log(`${req.method} ${req.url}`)
+      
+        // parse URL
+        let fixedurl = req.url.replace('/', '\\')
+        const parsedUrl = new URL(__dirname + fixedurl)
+        // extract URL path
+        let pathname = `${parsedUrl.href}`
+      
+        pathname = pathname.replace(/^(\.)+/, '.') //disallow access to root folder
+      
+        // maps file extention to MIME typere
+        const map = {
+          '.ico': 'image/x-icon',
+          '.html': 'text/html',
+          '.js': 'text/javascript',
+          '.json': 'application/json',
+          '.css': 'text/css',
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.wav': 'audio/wav',
+          '.mp3': 'audio/mpeg',
+          '.svg': 'image/svg+xml',
+          '.pdf': 'application/pdf',
+          '.doc': 'application/msword'
+        }
+
+        fs.stat(pathname, function (err, exist) {
+            if(err) {
+              // if the file is not found, return 404
+              res.statusCode = 404
+              res.end(`File ${pathname} not found!`)
+              return;
+            }
+        
+            // if is a directory search for index file matching the extention
+            if (fs.statSync(pathname).isDirectory()) {
+                pathname += '/index.html'
+            }
+            
+            // based on the URL path, extract the file extention. e.g. .js, .doc, ...
+            const ext = path.parse(pathname).ext
+        
+            // read file from file system
+            fs.readFile(pathname, function(err, data){
+              if(err){
+                res.statusCode = 500;
+                res.end(`Error getting the file: ${err}.`)
+              } else {
+                if (pathname.includes('index.html')) {
+                    let index = require('cheerio').load(data)
+                    index('head').append('<script>window.networkSession = true</script>')
+                    
+                    res.setHeader('Content-type', map[ext] || 'text/plain' )
+                    res.end(index.html())
+                } else {
+                
+                    // if the file is found, set Content-type and send data
+                    res.setHeader('Content-type', map[ext] || 'text/plain' )
+                    res.end(data)
+                }
+              }
+            });
+          });
+        
+        
+        }).listen(parseInt(port, () => {
+            console.log('Listening on port 9000')
+        }));
+        
+        console.log(`Server listening on port ${port}`);
+      
+        const { Server } = require("socket.io");
+        const io = new Server(server);
+    startApp(db, io)
   });
 });
 
@@ -31,7 +106,8 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', function () {
     isQuitting = true
-  });
+});
+
 
 // on Mac it's common to re-create a window in the app when the dark icon is clicked and there are no other windows open
 app.on('activate', () => {
@@ -40,10 +116,11 @@ app.on('activate', () => {
     }
 })
 
-function startApp(db) {
+function startApp(db, io) {
     app.allowRendererProcessReuse = false
     let mainWindow = createWindow()
     listenEvents(db, ipcMain, mainWindow, fs)
+    socketListenEvents(db, io, mainWindow, fs)
     initTrayQuit(mainWindow)
 }
 
@@ -56,7 +133,7 @@ function createWindow() {
             nnodeIntegration: false, // is default value after Electron v5
             contextIsolation: true, // protect against prototype pollution
             enableRemoteModule: false, // turn off remote
-            preload: path.join(__dirname, "preload.js") // use a preload script
+            preload: path.join(__dirname, "/preload.js") // use a preload script
         }
     })
 
@@ -69,6 +146,232 @@ function createWindow() {
     win.webContents.openDevTools()
 
     return win
+}
+
+function socketListenEvents(db, io, mainWindow, fs) {
+    io.on('connection', (socket) => {
+        
+        socket.on('socketRequest', (msg) => {
+          console.log('request: ' + msg)
+        });
+
+        socket.on('readEpubFromFile', (path) => {
+            try {
+                let file = openFile(path);
+                socket.emit('onReadEpubFromFile', {
+                    error: false,
+                    data: file
+                })
+            }
+            catch (err) {
+                socket.emit('onReadEpubFromFile', {
+                    error: true,
+                    message: err
+                })
+            }
+        })
+        
+        socket.on('selectLibraryLocation', () => {
+    
+            const config={type:'directory'}
+            networkDialog(config).then(dir => {
+                io.emit('onSelectLibraryLocation', {
+                    error: false,
+                    data: dir
+                })
+            }).catch(err => {
+                io.emit('onSelectLibraryLocation', {
+                    error: true,
+                    message: err
+                })
+            })
+            
+        }) 
+           
+        socket.on('getBooks', () => {
+            database.getBooks(db).then((response) => {
+                socket.emit('onGetBooks', response)
+            })   
+        })
+
+        socket.on('removeBook', (bookId) => {
+            database.removeBook(db, bookId).then((response) => {
+                socket.emit('onRemoveBook', response)
+            })   
+        })
+
+        socket.on('getBookFileList', (folder) => {
+            if (fs.statSync(folder)) {
+                const walkSync = (dir, filelist = []) => {
+                    fs.readdirSync(dir).forEach(file => {
+                  
+                      filelist = fs.statSync(path.join(dir, file)).isDirectory()
+                        ? walkSync(path.join(dir, file), filelist)
+                        : filelist.concat(path.join(dir, file))
+                  
+                    })
+                  return filelist;
+                }
+                var files = walkSync(folder, [])
+                socket.emit('onGetBookFileList', {
+                    error: false,
+                    data: files
+                })
+            } else {
+                socket.emit('onGetBookFileList', {
+                    error: true,
+                    data: []
+                })
+            }
+        })
+
+        socket.on('getBookFileListModal', (folder) => {
+            if (fs.statSync(folder)) {
+                const walkSync = (dir, filelist = []) => {
+                    fs.readdirSync(dir).forEach(file => {
+                  
+                      filelist = fs.statSync(path.join(dir, file)).isDirectory()
+                        ? walkSync(path.join(dir, file), filelist)
+                        : filelist.concat(path.join(dir, file))
+                  
+                    })
+                  return filelist;
+                }
+                var files = walkSync(folder, [])
+                io.emit("onGetBookFileListModal", {
+                    error: false,
+                    data: files
+                })
+            } else {
+                io.emit("onGetBookFileListModal", {
+                    error: true,
+                    data: []
+                })
+            }
+    
+            
+        })
+
+        socket.on('getLibraryLocation', () => {
+            database.getLibraryLocation(db).then((response) => {
+                io.emit('onGetLibraryLocation', response)
+            })
+        });
+
+        socket.on('libraryLocationExists', (folder) => {
+            fs.stat(folder, function (err) {
+                if(err) {
+                    // if the file is not found, return 404
+                    io.emit('onLibraryLocationExists', {
+                        error: false,
+                        data: false
+                    })
+                    return
+                }
+                if (fs.statSync(folder)) {
+                    io.emit('onLibraryLocationExists', {
+                        error: false,
+                        data: true
+                    })
+                } else {
+                    io.emit('onLibraryLocationExists', {
+                        error: false,
+                        data: false
+                    })
+                    
+                }  
+            })
+        })
+
+        socket.on('insertLibraryLocation', async (arg) => {
+            database.insertLibraryLocation(db, arg).then((response) => {
+                socket.emit('onInsertLibraryLocation', response)
+            })
+            
+        })
+
+        socket.on('updateLibraryLocation', async(arg) => {
+            database.updateLibraryLocation(db, arg.folder, arg.id).then((response) => {
+                socket.emit('onUpdateLibraryLocation', response);
+            })
+            
+        })
+
+        socket.on('getBooksPaths', async () => {
+            database.getBooksPaths(db, path).then((response) => {
+                socket.emit('onGetBooksPaths', response);
+            })        
+        })
+
+        socket.on('updateBooksPaths', async (arg) => {
+            database.updateBooksPathsGetRows(db, arg.path, arg.rowId).then((response) => {
+                win.webContents.send("onUpdateBooksPaths", response);
+            })        
+        })
+
+        socket.on('resolveMissingBooks', async (arg) => {
+            database.resolveMissingBooks(db, arg.path, arg.filename, arg.bookId).then((response) => {
+                socket.emit('onResolveMissingBooks', response);
+            })        
+        })
+
+        socket.on('addBooksToLibrary', () => {
+            const config={type:'open-files'}
+            networkDialog(config).then(dir => {
+                socket.emit('onAddBooksToLibrary', {
+                    error: false,
+                    data: dir
+                })
+            }).catch(err => {
+                socket.emit('onAddBooksToLibrary', {
+                    error: true,
+                    message: err
+                })
+            })    
+        })
+
+        socket.on('addBooksToDatabase', async (bookArray) => {
+            database.addBooksToDatabase(db, bookArray, 0, {error: false}).then((response) => {
+                socket.emit('onAddBooksToDatabase', response);
+            })        
+        })
+
+        socket.on('recordReadPosition', async (arg) => {
+            database.recordReadPosition(db, arg.bookId, arg.cfi).then((response) => {
+                socket.emit('onRecordReadPosition', response);
+            })        
+        })
+
+        socket.on('getBookmarks', async (bookId) => {
+            database.getBookmarks(db, bookId).then((response) => {
+                socket.emit('onGetBookmarks', response);
+            })        
+        })
+
+        socket.on('addBookmark', async (arg) => {
+            database.addBookmark(db, arg.bookId, arg.cfi).then((response) => {
+                socket.emit('onAddBookmark', response);
+            })        
+        })
+
+        socket.on('updateBookmarkTitle', async (arg) => {
+            database.updateBookmarkTitle(db, arg.title, arg.bookId).then((response) => {
+                socket.emit('onUpdateBookmarkTitle', response);
+            })        
+        })
+
+        socket.on('deleteBookmark', async (bookId) => {
+            database.deleteBookmark(db, bookId).then((response) => {
+                socket.emit('onDeleteBookmark', response);
+            })        
+        })
+
+        socket.on('goToLastRead', async (bookId) => {
+            database.goToLastRead(db, bookId).then((response) => {
+                socket.emit('onGoToLastRead', response);
+            })        
+        })
+    });
 }
 
 function listenEvents(db, ipcMain, mainWindow, fs) {
@@ -93,8 +396,8 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
             })
         }
         catch (err) {
-            win.webContents.send("selectLibraryLocationResponse", {
-                error: false,
+            win.webContents.send("readEpubFromFileResponse", {
+                error: true,
                 message: err
             })
         }
@@ -131,7 +434,7 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
     })
 
     ipcMain.on('getBookFileList', (event, arg) => {
-        if (fs.existsSync(arg)) {
+        if (fs.statSync(arg)) {
             const walkSync = (dir, filelist = []) => {
                 fs.readdirSync(dir).forEach(file => {
               
@@ -153,12 +456,10 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
                 data: []
             })
         }
-
-        
     })
 
     ipcMain.on('getBookFileListModal', (event, arg) => {
-        if (fs.existsSync(arg)) {
+        if (fs.statSync(arg)) {
             const walkSync = (dir, filelist = []) => {
                 fs.readdirSync(dir).forEach(file => {
               
@@ -170,7 +471,7 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
               return filelist;
             }
             var files = walkSync(arg, [])
-            win.webContents.send("getBookFileModalListResponse", {
+            win.webContents.send("getBookFileListModalResponse", {
                 error: false,
                 data: files
             })
@@ -192,17 +493,27 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
     })
 
     ipcMain.on('libraryLocationExists', async (event, arg) => {
-        if (fs.existsSync(arg)) {
-            win.webContents.send("libraryLocationExistsResponse", {
-                error: false,
-                data: true
-            })
-        } else {
-            win.webContents.send("libraryLocationExistsResponse", {
-                error: false,
-                data: false
-            })
-        }  
+        fs.stat(arg, function (err) {
+            if(err) {
+                // if the file is not found, return 404
+                win.webContents.send("libraryLocationExistsResponse", {
+                    error: false,
+                    data: false
+                })
+                return
+            }
+            if (fs.statSync(arg)) {
+                win.webContents.send("libraryLocationExistsResponse", {
+                    error: false,
+                    data: true
+                })
+            } else {
+                win.webContents.send("libraryLocationExistsResponse", {
+                    error: false,
+                    data: false
+                })
+            }  
+        })
     })
 
     ipcMain.on('insertLibraryLocation', async (event, arg) => {
@@ -295,7 +606,6 @@ function listenEvents(db, ipcMain, mainWindow, fs) {
 
     ipcMain.on('goToLastRead', async (event, bookId) => {
         database.goToLastRead(db, bookId).then((response) => {
-            console.log('main responding')
             win.webContents.send("goToLastReadResponse", response);
         })        
     })

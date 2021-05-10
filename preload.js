@@ -94,7 +94,7 @@ contextBridge.exposeInMainWorld(
             delete listeners[key]
             ipcRenderer.removeListener('getLibraryLocationResponse', fn)
         },
-        getLibraryLocation: () => ipcRenderer.send("getLibraryLocation"),
+        getLibraryLocation: () => ipcRenderer.send("getLibraryLocation", false),
         onLibraryLocationExists: (fn) => {
             // Deliberately strip event as it includes `sender`
             const saferFn = (event, ...args) => fn(...args)
