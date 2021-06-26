@@ -16,6 +16,8 @@
     "socket.io": "latest"
   },
   "dependencies": {
+    "epub": "^1.2.1",
+    "epubchecker": "^4.2.2",
     "node-file-dialog": "^1.0.3"
   }
 }

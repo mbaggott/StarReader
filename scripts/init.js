@@ -57,6 +57,10 @@ function resize(){
 $(function() {
     if (window.networkSession) {
         window.socket = io();
+        $('#addBooksButton').hide();
+        $('#addBooksMessageElectron').hide();
+    } else {
+        $('#addBooksMessageNetwork').hide();
     }
 
     if (!window.networkSession) {
@@ -110,10 +114,9 @@ $(function() {
     
     });
 
-    $('exitToSystemTray').on('click', () => {
-    
-    
-    })
+    if (window.networkSession) {
+        $('.serverOnly').addClass('serverOnlyHidden');
+    }
 });
 
 function resolveMissingBook(bookId) {
@@ -149,175 +152,90 @@ function resolveMissingBook(bookId) {
 }
 
 function addBooks() {
-    if (window.networkSession) {
-        let libraryPathQuery = new Promise((resolve, reject) => {
-            window.socket.on('onGetLibraryLocation', (response) => {
-                window.socket.off('onGetLibraryLocation');
-                resolve(response);
-            });
-            window.socket.emit('getLibraryLocation');
+    let libraryPathQuery = new Promise((resolve, reject) => {
+        window.api.onGetLibraryLocation((response) => {
+            window.api.getLibraryLocationRemoveResponseHandler('GLLKEY');
+            resolve(response);
         });
+        window.api.getLibraryLocation(); //printed first
+    });
 
-        libraryPathQuery.then((response1) => {
-            if (response1.error == false) {
-                let libraryPath = response1.data[0].LibraryLocation
-                let libraryPathQuery  = new Promise((resolve, reject) => {
-                    window.socket.on('onAddBooksToLibrary', (response2) => {
-                        window.socket.off('onAddBooksToLibrary');
-                        resolve(response2);
-                    });
-                    window.socket.emit('addBooksToLibrary');
+    libraryPathQuery.then((response1) => {
+        if (response1.error == false) {
+            let libraryPath = response1.data[0].LibraryLocation
+            let libraryPathQuery  = new Promise((resolve, reject) => {
+                window.api.onAddBooksToLibrary((response2) => {
+                    window.api.addBooksToLibraryRemoveResponseHandler('ABTLKEY');
+                    resolve(response2);
                 });
-                libraryPathQuery.then((response2) => {
-                    if (response2.error == false) {
-                        let fileList = response2.data;
-                        if (fileList.length == 0) {
-                            return;
-                        }
-                        for (let flx = 0; flx < fileList.length; flx++) {
-                            console.log(fileList[flx]);
-                            console.log(libraryPath);
-                            var newPath = fileList[flx].replace(/\//g, "\\");
-                            console.log(newPath);
-                            if (!newPath.includes(libraryPath)) {
-                                $('#addBooksMustBeInLibraryFolder').show();
-                                setTimeout(function(){
-                                    $('#addBooksMustBeInLibraryFolder').hide();
-                                },5000);
-                                return;
-                            }
-                        }
-                        let numFiles = fileList.length;
-                        let count = 0;
-                        
-                        // Create a query to check for existing book paths
-                        let pathListQuery = new Promise((resolve, reject) => {
-                            window.socket.on('onGetBooksPaths', (response3) => {
-                                window.socket.off('onGetBooksPaths');
-                                resolve(response3);
-                            });
-                            window.socket.emit('getBooksPaths');
-                        });
-                        pathListQuery.then((response3) => {
-                            if (response3.error == false) {
-                                let rows = response3.data;
-                                $('.progress-bar').css('width', '0%');
-                                window.addBooksCancel = false;
-                    
-                                // Set up the cancel onclick
-                                $('#addBooksCancel').on('click', ()=> {
-                                    window.addBooksCancel = true;
-                                })
-                    
-                                // Show the progress bar, blocking interaction with the rest of the web page
-                                $('.progressContainer').show();
-                    
-                                // Start adding the books one by one to the database
-                                addBooktoDB([], numFiles, count, fileList, rows, 0);
-                            } 
-                            else {
-                                $('#serverErrorMessage').html(response3.message);
-                                $('#serverErrorModal').modal('show');
-                                return;
-                            }
-                        });
-                    } else {
-                        $('#serverErrorMessage').html(response2.message);
-                        $('#serverErrorModal').modal('show');
+                window.api.addBooksToLibrary(); //printed first
+            });
+            libraryPathQuery.then((response2) => {
+                if (response2.error == false) {
+                    let fileList = response2.data;
+                    if (fileList.length == 0) {
                         return;
                     }
-                });
-            } else {
-                $('#serverErrorMessage').html(response1.message);
-                $('#serverErrorModal').modal('show');
-                return;
-            }
-        });
-    }
-    else {
-        let libraryPathQuery = new Promise((resolve, reject) => {
-            window.api.onGetLibraryLocation((response) => {
-                window.api.getLibraryLocationRemoveResponseHandler('GLLKEY');
-                resolve(response);
-            });
-            window.api.getLibraryLocation(); //printed first
-        });
-
-        libraryPathQuery.then((response1) => {
-            if (response1.error == false) {
-                let libraryPath = response1.data[0].LibraryLocation
-                let libraryPathQuery  = new Promise((resolve, reject) => {
-                    window.api.onAddBooksToLibrary((response2) => {
-                        window.api.addBooksToLibraryRemoveResponseHandler('ABTLKEY');
-                        resolve(response2);
-                    });
-                    window.api.addBooksToLibrary(); //printed first
-                });
-                libraryPathQuery.then((response2) => {
-                    if (response2.error == false) {
-                        let fileList = response2.data;
-                        if (fileList.length == 0) {
+                    for (let flx = 0; flx < fileList.length; flx++) {
+                        if (!fileList[flx].includes(libraryPath)) {
+                            $('#addBooksMustBeInLibraryFolder').show();
+                            setTimeout(function(){
+                                $('#addBooksMustBeInLibraryFolder').hide();
+                            },5000);
                             return;
                         }
-                        for (let flx = 0; flx < fileList.length; flx++) {
-                            if (!fileList[flx].includes(libraryPath)) {
-                                $('#addBooksMustBeInLibraryFolder').show();
-                                setTimeout(function(){
-                                    $('#addBooksMustBeInLibraryFolder').hide();
-                                },5000);
-                                return;
-                            }
-                        }
-                        let numFiles = fileList.length;
-                        let count = 0;
-                        
-                        // Create a query to check for existing book paths
-                        let pathListQuery = new Promise((resolve, reject) => {
-                            window.api.onGetBooksPaths((response3) => {
-                                window.api.getBooksPathsRemoveResponseHandler('GBPKEY');
-                                resolve(response3);
-                            });
-                            window.api.getBooksPaths(); //printed first
-                        });
-                        pathListQuery.then((response3) => {
-                            if (response3.error == false) {
-                                let rows = response3.data;
-                                $('.progress-bar').css('width', '0%');
-                                window.addBooksCancel = false;
-                    
-                                // Set up the cancel onclick
-                                $('#addBooksCancel').on('click', ()=> {
-                                    window.addBooksCancel = true;
-                                })
-                    
-                                // Show the progress bar, blocking interaction with the rest of the web page
-                                $('.progressContainer').show();
-                    
-                                // Start adding the books one by one to the database
-                                addBooktoDB([], numFiles, count, fileList, rows, 0);
-                            } 
-                            else {
-                                $('#serverErrorMessage').html(response3.message);
-                                $('#serverErrorModal').modal('show');
-                                return;
-                            }
-                        });
-                    } else {
-                        $('#serverErrorMessage').html(response2.message);
-                        $('#serverErrorModal').modal('show');
-                        return;
                     }
-                });
-            } else {
-                $('#serverErrorMessage').html(response1.message);
-                $('#serverErrorModal').modal('show');
-                return;
-            }
-        });
-    }
+                    let numFiles = fileList.length;
+                    let count = 0;
+                    let invalidCount = 0;
+                    
+                    // Create a query to check for existing book paths
+                    let pathListQuery = new Promise((resolve, reject) => {
+                        window.api.onGetBooksPaths((response3) => {
+                            window.api.getBooksPathsRemoveResponseHandler('GBPKEY');
+                            resolve(response3);
+                        });
+                        window.api.getBooksPaths(); //printed first
+                    });
+                    pathListQuery.then((response3) => {
+                        if (response3.error == false) {
+                            let rows = response3.data;
+                            $('.progress-bar').css('width', '0%');
+                            window.addBooksCancel = false;
+                
+                            // Set up the cancel onclick
+                            $('#addBooksCancel').on('click', ()=> {
+                                window.addBooksCancel = true;
+                            })
+                
+                            // Show the progress bar, blocking interaction with the rest of the web page
+                            $('.progressContainer').show();
+                
+                            // Start adding the books one by one to the database
+                            addBooktoDB([], numFiles, count, invalidCount, fileList, rows, 0);
+                        } 
+                        else {
+                            $('#serverErrorMessage').html(response3.message);
+                            $('#serverErrorModal').modal('show');
+                            return;
+                        }
+                    });
+                } else {
+                    $('#serverErrorMessage').html(response2.message);
+                    $('#serverErrorModal').modal('show');
+                    return;
+                }
+            });
+        } else {
+            $('#serverErrorMessage').html(response1.message);
+            $('#serverErrorModal').modal('show');
+            return;
+        }
+    });
+    
 }      
 
-function addBooktoDB(bookArray, numFiles, count, fileList, pathList, booksAdded) {
+function addBooktoDB(bookArray, numFiles, count, invalidCount, fileList, pathList, booksAdded) {
     $('.alert').hide();
     $('.progress-bar').css('width', (count / numFiles * 100) + '%');
     if (count > 0) {
@@ -336,8 +254,14 @@ function addBooktoDB(bookArray, numFiles, count, fileList, pathList, booksAdded)
                 $('#someBooksAddedDuplicates').hide();
             },5000);
         }
-        if (booksAdded > 0) {
-            sendBooksToDatabase(bookArray);
+        if (booksAdded > 0 && count != invalidCount) {
+            sendBooksToDatabase(bookArray, invalidCount);
+        }
+        if (invalidCount > 0) {
+            $('#someBooksInvalid').show();
+            setTimeout(function(){ 
+                $('#someBooksInvalid').hide();
+            }, 3000);
         }
         window.addBooksCancel = false;
         $('.progressContainer').hide();
@@ -348,28 +272,28 @@ function addBooktoDB(bookArray, numFiles, count, fileList, pathList, booksAdded)
     // Check if file path already exists in the Database. If it does, skip this book.
     if (pathList.length === 0) {
         if (numFiles > count && window.addBooksCancel == false) {
-            addBookToDBExecute(bookArray, numFiles, count, fileList, pathList, epubFile, ++booksAdded)
+            addBookToDBExecute(bookArray, numFiles, count, invalidCount, fileList, pathList, epubFile, ++booksAdded)
         } 
         else {
             // If finished, update the library Grid, and reset cancel back to false so it can be used again.
-            sendBooksToDatabase(bookArray);
+            sendBooksToDatabase(bookArray, invalidCount);
         }
     } else if (pathList.includes(epubFile)) {
         if (numFiles > count && window.addBooksCancel == false) {
-            addBooktoDB(bookArray, numFiles, ++count, fileList, pathList, booksAdded);
+            addBooktoDB(bookArray, numFiles, ++count, invalidCount, fileList, pathList, booksAdded);
         } 
         else {
             // If finished, update the library Grid, and reset cancel back to false so it can be used again.
-            sendBooksToDatabase(bookArray);
+            sendBooksToDatabase(bookArray, invalidCount);
         }
         return;
     }
     else {
-        addBookToDBExecute(bookArray, numFiles, count, fileList, pathList, epubFile, ++booksAdded)
+        addBookToDBExecute(bookArray, numFiles, count, invalidCount, fileList, pathList, epubFile, ++booksAdded)
     }
 } 
 
-function sendBooksToDatabase(bookArray) {
+function sendBooksToDatabase(bookArray, invalidCount) {
     if (window.networkSession) {
         window.socket.on('onAddBooksToDatabase', (response) => {
             window.socket.off('onAddBooksToDatabase');
@@ -405,40 +329,53 @@ function sendBooksToDatabase(bookArray) {
 
 }
 
-function addBookToDBExecute(bookArray, numFiles, count, fileList, pathList, epubFile, booksAdded) {
+function addBookToDBExecute(bookArray, numFiles, count, invalidCount, fileList, pathList, epubFile, booksAdded) {
+    console.log(epubFile);
     var filename = epubFile.split('\\').pop().split('/').pop();
-    // Insert the book into the database, and recursively call the function again, so all books are inserted one by one into the Database.
+    window.epubLoaderror = null;
     let epub = window.ePub(epubFile);
+
+    // Insert the book into the database, and recursively call the function again, so all books are inserted one by one into the Database.
     let title;
     let author;
-    epub.loaded.spine.then((spine) => {
-        Object.values(spine.spineItems).reduce(function(p, item) {
-            return p.then(function(bookArray) {
-                return getContents(item, epub).then(function(contents) {
-                    //const contents = await item[index].load(epub.load.bind(epub));
-                    title = $(contents).find('head').find('title').html();
-                    let meta = $(contents).find('head').find('meta[name=author]');
-                    author = meta.attr('content');
-                    bookObject = {
-                        'title': title,
-                        'author': author,
-                        'epubFile': epubFile,
-                        'filename': filename
-                    }
-                    return bookObject;
+
+    setTimeout(function(){ 
+        if (window.epubLoadError) {
+            addBooktoDB(bookArray, numFiles, ++count, ++invalidCount, fileList, pathList, booksAdded);
+            return;
+        }       
+        if (epub.spine.items) {
+            epub.loaded.spine.then((spine) => {
+                Object.values(spine.spineItems).reduce(function(p, item) {
+                    return p.then(() => {
+                        return getContents(item, epub).then(function(contents) {
+                            //const contents = await item[index].load(epub.load.bind(epub));
+                            title = $(contents).find('head').find('title').html();
+                            let meta = $(contents).find('head').find('meta[name=author]');
+                            author = meta.attr('content');
+                            bookObject = {
+                                'title': title,
+                                'author': author,
+                                'epubFile': epubFile,
+                                'filename': filename
+                            }
+                            return bookObject;
+                        });
+                    });
+                }, $.Deferred().resolve([])).then(function(bookObject) {
+                    bookArray.push(bookObject);
+                    addBooktoDB(bookArray, numFiles, ++count, invalidCount, fileList, pathList, booksAdded);
+                }, function(err) {
+                    // err is the error from the rejected promise that stopped the chain of execution
                 });
             });
-        }, $.Deferred().resolve([])).then(function(bookObject) {
-            bookArray.push(bookObject);
-            addBooktoDB(bookArray, numFiles, ++count, fileList, pathList, booksAdded);
-        }, function(err) {
-            // err is the error from the rejected promise that stopped the chain of execution
-        });
-            
-        
-        
-    });
-}
+        } 
+        else {
+            addBooktoDB(bookArray, numFiles, ++count, ++invalidCount, fileList, pathList, booksAdded);
+        }
+    }, 100);
+
+    }
 
 const getContents = async function(item, epub) {
     let content = item.load(epub.load.bind(epub));
@@ -457,7 +394,6 @@ async function updateLibraryLocation(manualEdit) {
                         window.socket.off('onSelectLibraryLocation');
                         if (response.error == false) {
                             folder =  response.data; 
-                            console.log(folder);
                             if (folder.length == 0) {
                                 return;
                             }

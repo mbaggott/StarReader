@@ -5,6 +5,7 @@ const {app, BrowserWindow, Tray, Menu} = require('electron')
 const path = require('path')
 const http = require('http')
 const fs = require('fs')
+const EPub = require("epub")
 const sqlite3 = require('sqlite3')
 var database = require('./database');
 const port = process.argv[2] || 9000;
@@ -312,27 +313,6 @@ function socketListenEvents(db, io, mainWindow, fs) {
         socket.on('resolveMissingBooks', async (arg) => {
             database.resolveMissingBooks(db, arg.path, arg.filename, arg.bookId).then((response) => {
                 socket.emit('onResolveMissingBooks', response);
-            })        
-        })
-
-        socket.on('addBooksToLibrary', () => {
-            const config={type:'open-files'}
-            networkDialog(config).then(dir => {
-                socket.emit('onAddBooksToLibrary', {
-                    error: false,
-                    data: dir
-                })
-            }).catch(err => {
-                socket.emit('onAddBooksToLibrary', {
-                    error: true,
-                    message: err
-                })
-            })    
-        })
-
-        socket.on('addBooksToDatabase', async (bookArray) => {
-            database.addBooksToDatabase(db, bookArray, 0, {error: false}).then((response) => {
-                socket.emit('onAddBooksToDatabase', response);
             })        
         })
 

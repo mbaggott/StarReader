@@ -389,6 +389,10 @@ thead input {
     z-index: 1031;
 }
 
+.serverOnlyHidden {
+    display: none;
+}
+
 /*For browser/screen widths less than 768px*/
 @media screen and (max-width: 1040px) {
 

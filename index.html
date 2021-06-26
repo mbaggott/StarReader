@@ -17,7 +17,7 @@
     <link rel="stylesheet" type="text/css" href="./scripts/DataTables-1.10.21/css/dataTables.bootstrap4.min.css"/>
     <link rel="stylesheet" type="text/css" href="./scripts/FixedHeader-3.1.7/css/fixedHeader.bootstrap4.min.css"/>
     <script src="./scripts/ePub/jszip.min.js"></script>
-    <script src="./scripts/ePub/epub.min.js"></script>
+    <script src="./scripts/ePub/epub.js"></script>
     <script src="./scripts/interactjs-1.9.20-dist/js/interact.min.js"></script>
     <script src="./scripts/jquery-ui-1.12.1-dist/js/jquery-ui.min.js"></script>
     <script type="text/javascript"src="./scripts/popper/popper.min.js"></script> 
@@ -63,7 +63,10 @@
                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
               </div>
             </div>
-            <p>Select one or more ePub books to add to the library</p>
+            <br/>
+            <br/>
+            <p id="addBooksMessageElectron">Select one or more ePub books to add to the library.</p>
+            <p id="addBooksMessageNetwork">Books may not be added via network or web access, please add books in the server application.</p>
             <br/>
             <br/>
             <form>
@@ -75,6 +78,7 @@
           <div id = "addBooksMustBeInLibraryFolder" class="alert alert-warning fixed-bottom timedWarning" role="alert">You must select books from within your specified Libary folder.</div>
           <div id = "allBooksAddedDuplicates" class="alert alert-warning fixed-bottom timedWarning" role="alert">The books you attempted to add were already in the Libray. No books added.</div>
           <div id = "someBooksAddedDuplicates" class="alert alert-warning fixed-bottom timedWarning" role="alert">Some of the books you attempted to add were already in the Libray. Duplicate books not added.</div>
+          <div id = "someBooksInvalid" class="alert alert-warning fixed-bottom timedWarning" role="alert">One or more books you attempted to add were invalid epubs, and were not added to the database</div>
         </div>
 
         <div class="tab-pane" id="library" role="tabpanel" aria-labelledby="library-tab">
@@ -88,7 +92,7 @@
         <div class="tab-pane" id="settings" role="tabpanel" aria-labelledby="settings-tab">
           <div id = "paneHolder4" class = "paneHolder  lightMode">
             <div>
-              <div class="row">
+              <div class="row serverOnly">
                 <div class="col-5">
                   Library Location:
                 </div>
@@ -99,7 +103,7 @@
                   <img id = "settingsLibraryIcon" class = "nightModeBMButton icon" onclick = "updateLibraryLocation(true)" src = "./img/icons/iconEdit32.png" />
                 </div>
               </div>
-              <div class="row">
+              <div class="row serverOnly">
                 <div class="col-5">
                   Exit to System Tray:
                 </div>
