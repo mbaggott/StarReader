@@ -980,25 +980,24 @@ function displayBook(arrbuf) {
     // Convert the array buffer into a blob so it can be read by EPub
     const blob = new Blob([arrbuf], { type: 'application/epub+zip' });
     window.book = ePub(blob);
-    var rendition = window.book.renderTo('result', { method: 'pagination', width: '100%', height: '100%' });
-    window.rendition = rendition;
-    rendition.themes.default({
+    window.rendition = window.book.renderTo('result', { method: 'pagination', width: '100%', height: '100%' });
+    window.rendition.themes.default({
         "body": { "padding-bottom": "50px !important" }
     })
-    var displayed = rendition.display();
-
+    window.rendition.display();
+    
     $('#read-tab').trigger('click');
   
     $('#nextButton').on('click', () => {
-        rendition.next().then(() => {
-            recordReadPosition();
+        window.rendition.next().then(() => {
+            setTimeout(() => { recordReadPosition() }, 100);
         });
         setTimeout(() => { setTimeoutFunction() }, 100);
     });
 
     $('#previousButton').on('click', () => {
-        rendition.prev().then(() => {
-            recordReadPosition()
+        window.rendition.prev().then(() => {
+            setTimeout(() => { recordReadPosition() }, 100);
         });
         setTimeout(() => { setTimeoutFunction() }, 100);
     });
@@ -1068,14 +1067,16 @@ function setTimeoutFunction() {
   $('#result iframe').contents().find('html').one('wheel', (event) => {
     if(event.originalEvent.wheelDelta / 120 > 0) {
         window.rendition.prev().then(() => {  
-          recordReadPosition();
-          setTimeoutScroll(false, false);
+        setTimeout(() => {
+            recordReadPosition(true);
+        }, 100);
         });
     }
     else{
         window.rendition.next().then(() => {
-          recordReadPosition();
-          setTimeoutScroll(false, false);
+            setTimeout(() => { 
+                recordReadPosition(true);
+             }, 100);
         });   
     }
   });
@@ -1084,7 +1085,7 @@ function setTimeoutFunction() {
 function loadChapterFromTOC(element) {
     let url = $("a:focus").attr('data-href');
     window.rendition.display(url).then(() => {
-        recordReadPosition();
+        setTimeout(() => { recordReadPosition() }, 100);
     });
     
     setTimeout(() => { setTimeoutFunction() }, 100);
@@ -1187,7 +1188,7 @@ function addCustomCSS() {
     window.rendition.hooks.content.register(function(contents){
         var loaded = Promise.all([
             //contents.addScript("https://code.jquery.com/jquery-2.1.4.min.js"),
-            contents.addStylesheet('./stylesheets/epub.css')
+            //contents.addStylesheet('./stylesheets/epub.css')
         ]);
 
         // return loaded promise
@@ -1226,9 +1227,9 @@ function sizeContentDiv() {
 
 function navigateToBookmark(position) {
     window.rendition.display(position).then(() => {
-        recordReadPosition();
+        setTimeout(() => { recordReadPosition() }, 200);
     });
-    setTimeoutScroll(false, 200);  
+    setTimeout(() => { setTimeoutFunction() }, 100);
 }
 
 function initResizeableElements() {
@@ -1659,7 +1660,11 @@ function updateBooksPaths(path, rowId) {
     });
 }
 
-function recordReadPosition() {
+function recordReadPosition(scrolling, milliseconds) {
+    var ms = false;
+    if (milliseconds) {
+        ms = milliseconds;
+    }
     if (window.networkSession) {
         window.socket.on('onRecordReadPosition', (response) => {
             window.socket.off('onRecordReadPosition');
@@ -1667,17 +1672,29 @@ function recordReadPosition() {
                 $('#serverErrorMessage').html(response.message);
                 $('#serverErrorModal').modal('show');
                 return;
+            } else {
+                if (scrolling) {
+                    setTimeoutScroll(false, ms);
+                }
             }
         });
         window.socket.emit('recordReadPosition', {'bookId': window.openBookId, 'cfi': window.rendition.currentLocation().start.cfi});
     } 
     else {
+        var ms = false;
+        if (milliseconds) {
+            ms = milliseconds;
+        }
         window.api.onRecordReadPosition((response) => {
             window.api.recordReadPositionRemoveResponseHandler('RRPKEY');
             if (response.error == true) {   
                 $('#serverErrorMessage').html(response.message);
                 $('#serverErrorModal').modal('show');
                 return;
+            } else {
+                if (scrolling) {
+                    setTimeoutScroll(false, ms);
+                }
             }
         });
         window.api.recordReadPosition(window.openBookId, window.rendition.currentLocation().start.cfi);

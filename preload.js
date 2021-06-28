@@ -214,7 +214,6 @@ contextBridge.exposeInMainWorld(
         readEpubFromFile: (path) => ipcRenderer.send("readEpubFromFile", path),
         onRecordReadPosition: (fn) => {
             // Deliberately strip event as it includes `sender`
-            // Deliberately strip event as it includes `sender`
             const saferFn = (event, ...args) => fn(...args)
             ipcRenderer.on('recordReadPositionResponse', saferFn)
             const key = 'RRPKEY'

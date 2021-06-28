@@ -7717,7 +7717,7 @@ class Contents {
 
 
       $stylesheet = this.document.querySelector("link[href='" + src + "']");
-
+	
       if ($stylesheet) {
         resolve(true);
         return; // already present
