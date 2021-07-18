@@ -219,10 +219,10 @@ contextBridge.exposeInMainWorld(
             const key = 'RRPKEY'
             listeners[key] = saferFn  
         },
-        recordReadPositionRemoveResponseHandler: (key) => {
+        recordReadPositionRemoveResponseHandler: async (key) => {
             const fn = listeners[key]
             delete listeners[key]
-            ipcRenderer.removeListener('recordReadPositionResponse', fn)
+            await ipcRenderer.removeListener('recordReadPositionResponse', fn)
         },
         recordReadPosition: (bookId, cfi) => ipcRenderer.send("recordReadPosition", bookId, cfi),
         onGetBookmarks: (fn) => {

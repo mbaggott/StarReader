@@ -44,7 +44,7 @@ function resize(){
         }
         else {
             resizeTimeout = false;
-            setTimeoutScroll(true, false); 
+            setTimeoutScroll(); 
             sizeContentDiv();
             if (window.rendition) {
                 window.rendition.resize(); 
@@ -55,6 +55,8 @@ function resize(){
 };
 
 $(function() {
+    window.relocated = false;
+    window.enableLastRead = true;
     if (window.networkSession) {
         window.socket = io();
         $('#addBooksButton').hide();
@@ -330,7 +332,6 @@ function sendBooksToDatabase(bookArray, invalidCount) {
 }
 
 function addBookToDBExecute(bookArray, numFiles, count, invalidCount, fileList, pathList, epubFile, booksAdded) {
-    console.log(epubFile);
     var filename = epubFile.split('\\').pop().split('/').pop();
     window.epubLoaderror = null;
     let epub = window.ePub(epubFile);
@@ -980,54 +981,66 @@ function displayBook(arrbuf) {
     // Convert the array buffer into a blob so it can be read by EPub
     const blob = new Blob([arrbuf], { type: 'application/epub+zip' });
     window.book = ePub(blob);
-    window.rendition = window.book.renderTo('result', { method: 'pagination', width: '100%', height: '100%' });
+    window.rendition = window.book.renderTo('result', { method: 'continuous', width: '100%', height: '100%' });
+    window.rendition.on('relocated', function(location){
+        window.relocated=true;
+        clearTimeout(window.RRPTO);
+        recordReadPosition(location);
+    });
+    window.rendition.on('displayed', function(location){
+         if (window.enableLastRead == true) {
+            goToLastRead(); 
+         }
+    });
     window.rendition.themes.default({
         "body": { "padding-bottom": "50px !important" }
     })
-    window.rendition.display();
     
     $('#read-tab').trigger('click');
-  
-    $('#nextButton').on('click', () => {
-        window.rendition.next().then(() => {
-            setTimeout(() => { recordReadPosition() }, 100);
+
+    window.rendition.display().then(() => {
+        $('#nextButton').on('click', () => {
+            $('#loadingScreenContainer').show();
+            window.relocated = false;
+            window.rendition.next();
+            window.RRPTO = setTimeout(RecordReadPositionTimeout, 1000);
         });
-        setTimeout(() => { setTimeoutFunction() }, 100);
-    });
-
-    $('#previousButton').on('click', () => {
-        window.rendition.prev().then(() => {
-            setTimeout(() => { recordReadPosition() }, 100);
+        $('#previousButton').on('click', () => {
+            $('#loadingScreenContainer').show();
+            window.relocated = false;
+            window.rendition.prev();
+            window.RRPTO = setTimeout(RecordReadPositionTimeout, 1000);
         });
-        setTimeout(() => { setTimeoutFunction() }, 100);
+        $('.navigationButton').on("mouseenter", (that) => {
+            $(that.target).fadeTo(0, 1);
+        }).on("mouseleave", (that) => {
+            $(that.target).fadeTo(0, 0);
+        })
+    
+        $('.chaptersButton').show();
+        $('.bookmarksButton').show();
+        $('.chaptersHeaderContainer').show();
+        $('.bookmarksHeaderContainer').show();
+        if($('#bookmarks:hidden').length == 0) { 
+            let right = $('#bookmarks').width() + 20;
+            $('#nextButton').css('right', right);
+        } 
+        else {
+            $('#nextButton').css('right', 0);
+        }
+        if($('#chapters:hidden').length == 0) { 
+            $('#previousButton').css('left', $('#chapters').width());
+        } 
+        else {
+            $('#previousButton').css('left', 0);
+        }
+        // Display the bookmarks
+        populateBookmarks();
+        initThemes();
+        addCustomCSS();
+        sizeContentDiv();
     });
 
-    setTimeoutScroll(true, false);
-
-    $('.navigationButton').hover(function() {
-        $(this).fadeTo(0, 1);
-    }, function() {
-        $(this).fadeTo(0, 0);
-    });
-
-    $('.chaptersButton').show();
-    $('.bookmarksButton').show();
-    $('.chaptersHeaderContainer').show();
-    $('.bookmarksHeaderContainer').show();
-    if($('#bookmarks:hidden').length == 0) { 
-        let right = $('#bookmarks').width() + 20;
-        $('#nextButton').css('right', right);
-    } 
-    else {
-        $('#nextButton').css('right', 0);
-    }
-    if($('#chapters:hidden').length == 0) { 
-        $('#previousButton').css('left', $('#chapters').width());
-    } 
-    else {
-        $('#previousButton').css('left', 0);
-    }
-        
     // Read the chapters
     $('#chaptersAutoGen').empty();
     window.book.ready.then(function(){
@@ -1040,55 +1053,53 @@ function displayBook(arrbuf) {
             });
         });
     });
-
-    // Display the bookmarks
-    populateBookmarks();
-    initThemes();
-    addCustomCSS();
-    sizeContentDiv();
-    goToLastRead();
 }
 
-function setTimeoutScroll(firstTime, sepcifiedMS) {
-    if (firstTime) {
-        setTimeout(() => { setTimeoutFunction() }, 1000);
+function RecordReadPositionTimeout() {
+    if (!window.relocated) {
+        recordReadPosition(window.rendition.currentLocation());
     }
-    else {
-        if (sepcifiedMS != false) {
-        setTimeout(() => { setTimeoutFunction() }, sepcifiedMS);
-        } else {
-        setTimeout(() => { setTimeoutFunction() }, 10);
-        }
+}
+
+function setTimeoutScroll() {
+    clearTimeout(window.scrollTimeout);
+    setTimeoutFunction();    
+}
+
+function wheelHandler(event) {
+    if(event.originalEvent.wheelDelta / 120 > 0) {
+        $('#loadingScreenContainer').show();
+        window.relocated = false;
+        window.rendition.prev();
+        window.RRPTO = setTimeout(RecordReadPositionTimeout, 1000);
     }
-    
+    else{
+        $('#loadingScreenContainer').show();
+        window.relocated = false;
+        window.rendition.next();
+        window.RRPTO = setTimeout(RecordReadPositionTimeout, 1000);
+    }
 }
 
 function setTimeoutFunction() {
-  $('#result iframe').contents().find('html').one('wheel', (event) => {
-    if(event.originalEvent.wheelDelta / 120 > 0) {
-        window.rendition.prev().then(() => {  
-        setTimeout(() => {
-            recordReadPosition(true);
-        }, 100);
-        });
-    }
-    else{
-        window.rendition.next().then(() => {
-            setTimeout(() => { 
-                recordReadPosition(true);
-             }, 100);
-        });   
-    }
-  });
+    //$('#result iframe').contents().find('html').off('wheel', test);    
+    window.scrollTimeout = setTimeout(() => { 
+        let ebook = $('#result iframe').contents().find('html');
+        ebook.one('wheel', (event) => { 
+            wheelHandler(event);
+        }); 
+    }, 10);
+    
 }
 
 function loadChapterFromTOC(element) {
+    $('#loadingScreenContainer').show();
     let url = $("a:focus").attr('data-href');
-    window.rendition.display(url).then(() => {
-        setTimeout(() => { recordReadPosition() }, 100);
-    });
+    window.rendition.display(url);
+    setTimeout(() => {
+        recordReadPosition(window.rendition.currentLocation());
+    },  500); 
     
-    setTimeout(() => { setTimeoutFunction() }, 100);
 }
 
 function closeChapters() {
@@ -1103,7 +1114,7 @@ function closeChapters() {
     }
     $("#previousButton").css("left", 0);
     window.rendition.resize();  
-        setTimeout(() => { setTimeoutFunction() }, 100);
+        setTimeoutScroll();
     }
 
 function closeBookmarks() {
@@ -1118,7 +1129,7 @@ function closeBookmarks() {
     }
     $("#nextButton").css("right", 0);
     window.rendition.resize();  
-    setTimeout(() => { setTimeoutFunction() }, 100);    
+    setTimeoutScroll();   
 }
 
 function chaptersButtonPressed() {
@@ -1134,7 +1145,7 @@ function chaptersButtonPressed() {
         }
         window.rendition.resize();  
         $("#previousButton").css("left", 0);
-        setTimeout(() => { setTimeoutFunction() }, 100);
+        setTimeoutScroll();
     } 
     else {
         $('#chapters').show();
@@ -1147,7 +1158,7 @@ function chaptersButtonPressed() {
         }
         window.rendition.resize();  
         $("#previousButton").css("left", $('#chapters').width());
-        setTimeout(() => { setTimeoutFunction() }, 100);
+       setTimeoutScroll();
         window.rendition.display(window.currentCFI);
     }
 }
@@ -1165,7 +1176,7 @@ function bookmarksButtonPressed() {
         }
         window.rendition.resize();  
         $("#nextButton").css("right", 0);
-        setTimeout(() => { setTimeoutFunction() }, 100);
+        setTimeoutScroll();
     }
      else {
         $('#bookmarks').show();
@@ -1179,7 +1190,7 @@ function bookmarksButtonPressed() {
         window.rendition.resize();  
         let right = $('#bookmarks').width() + 20;
         $("#nextButton").css("right", right);
-        setTimeout(() => { setTimeoutFunction() }, 100);
+        setTimeoutScroll();
         window.rendition.display(window.currentCFI);
     }
 }
@@ -1226,10 +1237,7 @@ function sizeContentDiv() {
 }
 
 function navigateToBookmark(position) {
-    window.rendition.display(position).then(() => {
-        setTimeout(() => { recordReadPosition() }, 200);
-    });
-    setTimeout(() => { setTimeoutFunction() }, 100);
+    window.rendition.display(position);
 }
 
 function initResizeableElements() {
@@ -1269,7 +1277,7 @@ function initResizeableElements() {
             } else {
                 window.rendition.resize();
                 resizeTimeoutInteract = false;
-                setTimeoutScroll(true, false);  
+                //setTimeoutScroll(true, false);  
             }               
         }
 
@@ -1333,7 +1341,7 @@ function initResizeableElements() {
             } else {
                 window.rendition.resize();
                 resizeTimeoutInteract = false;
-                setTimeoutScroll(true, false);  
+                setTimeoutScroll();  
             }               
         }
 
@@ -1660,48 +1668,45 @@ function updateBooksPaths(path, rowId) {
     });
 }
 
-function recordReadPosition(scrolling, milliseconds) {
-    var ms = false;
-    if (milliseconds) {
-        ms = milliseconds;
+function recordReadPosition(location) {
+    if (!location.start) {
+        $('#loadingScreenContainer').hide();
+        setTimeoutScroll();
+        return;
     }
     if (window.networkSession) {
         window.socket.on('onRecordReadPosition', (response) => {
             window.socket.off('onRecordReadPosition');
             if (response.error == true) {   
+                $('#loadingScreenContainer').hide();
                 $('#serverErrorMessage').html(response.message);
                 $('#serverErrorModal').modal('show');
                 return;
-            } else {
-                if (scrolling) {
-                    setTimeoutScroll(false, ms);
-                }
             }
+            $('#loadingScreenContainer').hide();
+            setTimeoutScroll();
         });
-        window.socket.emit('recordReadPosition', {'bookId': window.openBookId, 'cfi': window.rendition.currentLocation().start.cfi});
+        window.socket.emit('recordReadPosition', {'bookId': window.openBookId, 'cfi': location.start.cfi});        
     } 
     else {
-        var ms = false;
-        if (milliseconds) {
-            ms = milliseconds;
-        }
-        window.api.onRecordReadPosition((response) => {
-            window.api.recordReadPositionRemoveResponseHandler('RRPKEY');
+        window.api.onRecordReadPosition(async (response) => {
+            await window.api.recordReadPositionRemoveResponseHandler('RRPKEY');
             if (response.error == true) {   
+                $('#loadingScreenContainer').hide();
                 $('#serverErrorMessage').html(response.message);
                 $('#serverErrorModal').modal('show');
                 return;
-            } else {
-                if (scrolling) {
-                    setTimeoutScroll(false, ms);
-                }
-            }
+            } 
+            $('#loadingScreenContainer').hide();
+            setTimeoutScroll();
         });
-        window.api.recordReadPosition(window.openBookId, window.rendition.currentLocation().start.cfi);
+        window.api.recordReadPosition(window.openBookId, location.start.cfi); 
     }
 }
 
 function goToLastRead() {
+    window.enableLastRead = false;
+    $('#loadingScreenContainer').show();    
     if (window.networkSession) {
         window.socket.on('onGoToLastRead', (response) => {
             window.socket.off('onGoToLastRead');
@@ -1711,7 +1716,12 @@ function goToLastRead() {
                 return;
             }
             if (response.data) {
-                window.rendition.display(response.data);
+                setTimeout(() => { window.rendition.display(response.data); }, 500); 
+                setTimeout(() => { 
+                    window.rendition.display(response.data);
+                    $('#loadingScreenContainer').hide();
+                    setTimeoutScroll();
+                }, 1000); 
             }
         });
         window.socket.emit('goToLastRead', window.openBookId);
@@ -1725,7 +1735,14 @@ function goToLastRead() {
                 return;
             }
             if (response.data) {
-                window.rendition.display(response.data);
+                setTimeout(() => { window.rendition.display(response.data); }, 500); 
+                setTimeout(() => { 
+                    window.rendition.display(response.data);
+                    $('#loadingScreenContainer').hide();
+                    setTimeoutScroll();
+                }, 1000); 
+                
+               
             }
         });
         window.api.goToLastRead(window.openBookId);
