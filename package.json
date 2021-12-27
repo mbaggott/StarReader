@@ -9,15 +9,14 @@
   "author": "Michael Baggott",
   "license": "ISC",
   "devDependencies": {
-    "@types/datatables.net": "latest",
-    "cheerio": "latest",
-    "electron": "latest",
-    "sqlite3": "latest",
-    "socket.io": "latest"
+    "@types/datatables.net": "^1.10.21",
+    "cheerio": "^1.0.0-rc.10",
+    "electron": "^16.0.5",
+    "epub": "latest",
+    "epubchecker": "latest",
+    "node-file-dialog": "latest",
+    "socket.io": "^4.4.0",
+    "sqlite3": "^5.0.2"
   },
-  "dependencies": {
-    "epub": "^1.2.1",
-    "epubchecker": "^4.2.2",
-    "node-file-dialog": "^1.0.3"
-  }
+  "dependencies": {}
 }

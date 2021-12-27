@@ -35,12 +35,16 @@ function resize(){
     resizeTime = new Date();
     if (resizeTimeout === false) {
         resizeTimeout = true;
-        setTimeout(resizeend, resizeDelta);
+        setTimeout(() => {
+            resizeend();
+        }, resizeDelta);
     }
 
     function resizeend() {
         if (new Date() - resizeTime < resizeDelta) {
-            setTimeout(resizeend, resizeDelta);
+            setTimeout(() => {
+                resizeend();
+            }, resizeDelta);
         }
         else {
             resizeTimeout = false;
@@ -1003,13 +1007,17 @@ function displayBook(arrbuf) {
             $('#loadingScreenContainer').show();
             window.relocated = false;
             window.rendition.next();
-            window.RRPTO = setTimeout(RecordReadPositionTimeout, 1000);
+            window.RRPTO = setTimeout(() => {
+                RecordReadPositionTimeout();
+            }, 1000);
         });
         $('#previousButton').on('click', () => {
             $('#loadingScreenContainer').show();
             window.relocated = false;
             window.rendition.prev();
-            window.RRPTO = setTimeout(RecordReadPositionTimeout, 1000);
+            window.RRPTO = setTimeout(() => {
+                RecordReadPositionTimeout();
+            }, 1000);
         });
         $('.navigationButton').on("mouseenter", (that) => {
             $(that.target).fadeTo(0, 1);
@@ -1071,13 +1079,17 @@ function wheelHandler(event) {
         $('#loadingScreenContainer').show();
         window.relocated = false;
         window.rendition.prev();
-        window.RRPTO = setTimeout(RecordReadPositionTimeout, 1000);
+        window.RRPTO = setTimeout(() => {
+            RecordReadPositionTimeout();
+        }, 1000);
     }
     else{
         $('#loadingScreenContainer').show();
         window.relocated = false;
         window.rendition.next();
-        window.RRPTO = setTimeout(RecordReadPositionTimeout, 1000);
+        window.RRPTO = setTimeout(() => {
+            RecordReadPositionTimeout();
+        }, 1000);
     }
 }
 
@@ -1268,12 +1280,16 @@ function initResizeableElements() {
         resizeTimeInteract = new Date();
         if (resizeTimeoutInteract === false) {
             resizeTimeoutInteract = true;
-            setTimeout(resizeend, resizeDeltaInteract);
+            setTimeout(() => {
+                resizeend();
+            }, resizeDeltaInteract);
         }
 
         function resizeend() {
             if (new Date() - resizeTimeInteract < resizeDeltaInteract) {
-                setTimeout(resizeend, resizeDeltaInteract);
+                setTimeout(() => {
+                    resizeend();
+                }, resizeDeltaInteract);
             } else {
                 window.rendition.resize();
                 resizeTimeoutInteract = false;
@@ -1332,12 +1348,16 @@ function initResizeableElements() {
         resizeTimeInteract = new Date();
         if (resizeTimeoutInteract === false) {
         resizeTimeoutInteract = true;
-            setTimeout(resizeend, resizeDeltaInteract);
+            setTimeout(() => {
+                resizeend();
+            }, resizeDeltaInteract);
         }
 
         function resizeend() {
             if (new Date() - resizeTimeInteract < resizeDeltaInteract) {
-                setTimeout(resizeend, resizeDeltaInteract);
+                setTimeout(() => {
+                    resizeend();
+                }, resizeDeltaInteract);
             } else {
                 window.rendition.resize();
                 resizeTimeoutInteract = false;

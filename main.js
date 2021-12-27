@@ -134,6 +134,8 @@ function createWindow() {
             nnodeIntegration: false, // is default value after Electron v5
             contextIsolation: true, // protect against prototype pollution
             enableRemoteModule: false, // turn off remote
+            crossOriginEmbedderPolicy: "requireCorp",
+
             preload: path.join(__dirname, "/preload.js") // use a preload script
         }
     })
