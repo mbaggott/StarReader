@@ -1,22 +1,33 @@
 {
-  "name": "eserver",
+  "name": "StarReader",
   "version": "1.0.0",
   "description": "eBook Server",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
+  "directories": {
+    "buildResources": "scripts"
+  },
   "author": "Michael Baggott",
   "license": "ISC",
   "devDependencies": {
     "@types/datatables.net": "^1.10.21",
     "cheerio": "^1.0.0-rc.10",
-    "electron": "^16.0.5",
+    "electron": "^28.1.0",
     "epub": "latest",
     "epubchecker": "latest",
     "node-file-dialog": "latest",
     "socket.io": "^4.4.0",
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.1.6"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@mapbox/node-pre-gyp": "^1.0.11",
+    "@types/datatables.net": "^1.10.21",
+    "cheerio": "^1.0.0-rc.10",
+    "epub": "latest",
+    "epubchecker": "latest",
+    "node-file-dialog": "latest",
+    "socket.io": "^4.4.0"
+  }
 }

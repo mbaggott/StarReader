@@ -357,7 +357,7 @@ function addBookToDBExecute(bookArray, numFiles, count, invalidCount, fileList, 
                             //const contents = await item[index].load(epub.load.bind(epub));
                             title = $(contents).find('head').find('title').html();
                             let meta = $(contents).find('head').find('meta[name=author]');
-                            author = meta.attr('content');
+                            author = meta.length === 0 ? 'Unkown Author' : meta.attr('content');
                             bookObject = {
                                 'title': title,
                                 'author': author,
@@ -372,6 +372,8 @@ function addBookToDBExecute(bookArray, numFiles, count, invalidCount, fileList, 
                     addBooktoDB(bookArray, numFiles, ++count, invalidCount, fileList, pathList, booksAdded);
                 }, function(err) {
                     // err is the error from the rejected promise that stopped the chain of execution
+                    console.log(err);
+                    addBooktoDB(bookArray, numFiles, ++count, ++invalidCount, fileList, pathList, booksAdded);
                 });
             });
         } 
@@ -911,6 +913,7 @@ function initBooksTable() {
 
 // Get a book in the form of an array buffer from main.js where file handling is done
 function readBook(path, bookId) {
+    window.enableLastRead = true;
     window.openBookId = bookId;
     if (window.networkSession) {
         window.socket.on('onReadEpubFromFile', (response) => {
@@ -987,8 +990,14 @@ function displayBook(arrbuf) {
     window.book = ePub(blob);
     window.rendition = window.book.renderTo('result', { method: 'continuous', width: '100%', height: '100%' });
     window.rendition.on('relocated', function(location){
+        if (window.relocated) {
+            return;
+        }
         window.relocated=true;
-        clearTimeout(window.RRPTO);
+        if (window.RRPTO) {
+            clearTimeout(window.RRPTO);
+        }
+        window.RRPTO = null;
         recordReadPosition(location);
     });
     window.rendition.on('displayed', function(location){
@@ -1070,7 +1079,10 @@ function RecordReadPositionTimeout() {
 }
 
 function setTimeoutScroll() {
-    clearTimeout(window.scrollTimeout);
+    if (window.scrollTimeout) {
+        clearTimeout(window.scrollTimeout);
+    }
+    window.scrollTimeout = null;
     setTimeoutFunction();    
 }
 
@@ -1742,6 +1754,13 @@ function goToLastRead() {
                     $('#loadingScreenContainer').hide();
                     setTimeoutScroll();
                 }, 1000); 
+            } else {
+                setTimeout(() => { window.rendition.display(); }, 500); 
+                setTimeout(() => { 
+                    window.rendition.display();
+                    $('#loadingScreenContainer').hide();
+                    setTimeoutScroll();
+                }, 1000); 
             }
         });
         window.socket.emit('goToLastRead', window.openBookId);
@@ -1763,6 +1782,13 @@ function goToLastRead() {
                 }, 1000); 
                 
                
+            } else {
+                setTimeout(() => { window.rendition.display(); }, 500); 
+                setTimeout(() => { 
+                    window.rendition.display();
+                    $('#loadingScreenContainer').hide();
+                    setTimeoutScroll();
+                }, 1000); 
             }
         });
         window.api.goToLastRead(window.openBookId);

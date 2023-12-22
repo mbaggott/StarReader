@@ -3,10 +3,6 @@ const {
     ipcRenderer
 } = require("electron");
 
-const {
-    sqlite3
-} = require("sqlite3");
-
 let listeners = {}
 
 contextBridge.exposeInMainWorld(
