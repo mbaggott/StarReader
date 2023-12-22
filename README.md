@@ -17,4 +17,7 @@ Development Setup:
 - The main reader will display a bookmarks pane, and a book contents pane (as provided by the ebook). These pains may be closed, or re-opened using the toolbar in the top right corner
 - The toolbar in the top right corner also has a night mode option for a dark theme
 
+CHANGELOG
+
+22-12-2-23 - Updated for Electron 28.1.0
 
